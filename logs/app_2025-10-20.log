@@ -1,8 +1,0 @@
-[2025-10-20 09:40:40] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
-[2025-10-20 10:17:03] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
-[2025-10-20 10:17:12] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
-[2025-10-20 10:17:19] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
-[2025-10-20 10:28:06] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
-[2025-10-20 10:28:07] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
-[2025-10-20 10:28:12] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
-[2025-10-20 10:40:23] [error] Database connection failed: SQLSTATE[HY000] [1045] Access denied for user 'prizmaso_admin'@'localhost' (using password: YES)
