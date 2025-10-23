@@ -1,0 +1,378 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  VISITOR
+  CANDIDATE
+  NEW_EMPLOYEE
+  EMPLOYEE
+  MANAGER
+  CEO
+}
+
+enum EvaluationResult {
+  ELIGIBLE
+  PENDING
+  REJECTED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+}
+
+enum ApplicationStatus {
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum PayrollStatus {
+  PENDING
+  PROCESSING
+  PAID
+  DELAYED
+}
+
+enum LeaveType {
+  SHORT
+  ONE_DAY
+  LONG
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ClientRequestStatus {
+  NEW
+  IN_REVIEW
+  CLOSED
+}
+
+enum LegalDocumentType {
+  TERMS_CONDITIONS
+  PRIVACY_POLICY
+  EMPLOYEE_HANDBOOK
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  phone         String?
+  phoneVerified DateTime?
+  passwordHash  String
+  fullName      String
+  dob           DateTime? @db.Date
+  city          String?
+  province      String?
+  country       String?
+  address       String?   @db.Text
+  coreLocked    Boolean   @default(false)
+  role          UserRole  @default(VISITOR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  evaluations        Evaluation[]
+  applications       Application[]
+  employment         Employment?
+  timerSessions      TimerSession[]
+  dailySummaries     DailySummary[]
+  payrollWeeks       PayrollWeek[]
+  leaves             Leave[]
+  penalties          Penalty[]
+  recordings         Recording[]
+  decidedApplications Application[] @relation("DecidedBy")
+  decidedLeaves      Leave[]       @relation("DecidedBy")
+  approvalRequests   AdminApprovalRequest[]
+  reviewedRequests   AdminApprovalRequest[] @relation("ReviewedRequests")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Evaluation {
+  id                String            @id @default(cuid())
+  userId            String
+  age               Int?
+  deviceType        String?
+  ramText           String?
+  processorText     String?
+  stableInternet    Boolean?
+  provider          String?
+  linkSpeed         String?
+  numUsers          Int?
+  speedtestUrl      String?
+  profession        String?
+  dailyTimeOk       Boolean?
+  timeWindows       Json?
+  qualification     String?
+  confidentialityOk Boolean?
+  typingOk          Boolean?
+  result            EvaluationResult?
+  reasons           Json?
+  attempts          Int               @default(1)
+  createdAt         DateTime          @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([result])
+  @@map("evaluations")
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  userId          String
+  jobType         JobType
+  status          ApplicationStatus @default(UNDER_REVIEW)
+  reasons         Json?
+  submittedAt     DateTime          @default(now())
+  decidedAt       DateTime?
+  decidedByUserId String?
+  files           Json?
+
+  // Relations
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy User? @relation("DecidedBy", fields: [decidedByUserId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("applications")
+}
+
+model Employment {
+  userId                     String   @id
+  rdpHost                    String?
+  rdpUsername                String?
+  startDate                  DateTime @db.Date
+  firstPayrollEligibleFrom   DateTime @db.Date
+  securityFundDeducted       Boolean  @default(false)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("employment")
+}
+
+model TimerSession {
+  id               String    @id @default(cuid())
+  userId           String
+  startedAt        DateTime
+  endedAt          DateTime?
+  activeSeconds    Int       @default(0)
+  deviceId         String?
+  ip               String?
+  inactivityPauses Json?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([startedAt])
+  @@map("timer_sessions")
+}
+
+model DailySummary {
+  id                 String   @id @default(cuid())
+  userId             String
+  date               DateTime @db.Date
+  billableSeconds    Int      @default(0)
+  uploadsDone        Boolean  @default(false)
+  meetsDailyMinimum  Boolean  @default(false)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("daily_summaries")
+}
+
+model PayrollWeek {
+  id           String        @id @default(cuid())
+  userId       String
+  weekStart    DateTime      @db.Date
+  weekEnd      DateTime      @db.Date
+  hoursDecimal Decimal       @db.Decimal(5, 2)
+  baseAmount   Decimal       @db.Decimal(10, 2)
+  streakBonus  Decimal       @db.Decimal(10, 2) @default(0)
+  deductions   Json?
+  finalAmount  Decimal       @db.Decimal(10, 2)
+  status       PayrollStatus @default(PENDING)
+  paidAt       DateTime?
+  reference    String?
+
+  // Relations
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  penalties  Penalty[]
+
+  @@unique([userId, weekStart])
+  @@index([userId])
+  @@index([status])
+  @@map("payroll_weeks")
+}
+
+model Leave {
+  id              String      @id @default(cuid())
+  userId          String
+  type            LeaveType
+  dateFrom        DateTime    @db.Date
+  dateTo          DateTime    @db.Date
+  noticeHours     Int
+  status          LeaveStatus @default(PENDING)
+  penalties       Json?
+  requestedAt     DateTime    @default(now())
+  decidedAt       DateTime?
+  decidedByUserId String?
+
+  // Relations
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy User? @relation("DecidedBy", fields: [decidedByUserId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("leaves")
+}
+
+model Penalty {
+  id             String  @id @default(cuid())
+  userId         String
+  policyArea     String
+  amount         Decimal @db.Decimal(10, 2)
+  reason         String  @db.Text
+  payrollWeekId  String
+
+  // Relations
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payrollWeek  PayrollWeek @relation(fields: [payrollWeekId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([payrollWeekId])
+  @@map("penalties")
+}
+
+model Recording {
+  id         String   @id @default(cuid())
+  userId     String
+  weekStart  DateTime @db.Date
+  fileKey    String
+  uploadedAt DateTime @default(now())
+  validated  Boolean  @default(false)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([weekStart])
+  @@map("recordings")
+}
+
+model Gig {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String   @db.Text
+  price       Decimal  @db.Decimal(10, 2)
+  badges      Json?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([active])
+  @@index([slug])
+  @@map("gigs")
+}
+
+model ClientRequest {
+  id           String              @id @default(cuid())
+  businessName String
+  contactEmail String
+  contactPhone String?
+  brief        String              @db.Text
+  attachments  Json?
+  status       ClientRequestStatus @default(NEW)
+  createdAt    DateTime            @default(now())
+
+  @@index([status])
+  @@index([contactEmail])
+  @@map("client_requests")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model LegalDocument {
+  id            String            @id @default(cuid())
+  type          LegalDocumentType
+  title         String
+  content       String            @db.LongText
+  effectiveDate DateTime          @db.Date
+  version       String
+  published     Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([type])
+  @@map("legal_documents")
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  email     String?
+  phone     String?
+  code      String
+  type      String   // 'email' or 'sms'
+  purpose   String   // 'registration', 'login', 'phone_verification', etc.
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([phone])
+  @@index([expiresAt])
+  @@map("otps")
+}
+
+model AdminApprovalRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  requestType String   // 'name_change', 'dob_change'
+  currentData Json
+  requestedData Json
+  reason      String?  @db.Text
+  status      String   @default("PENDING") // 'PENDING', 'APPROVED', 'REJECTED'
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("ReviewedRequests", fields: [reviewedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("admin_approval_requests")
+}

@@ -1,0 +1,412 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid()) @db.Char(36)
+  email           String    @unique @db.VarChar(255)
+  passwordHash    String?   @map("password_hash") @db.VarChar(255)
+  firstName       String?   @map("first_name") @db.VarChar(100)
+  lastName        String?   @map("last_name") @db.VarChar(100)
+  phone           String?   @db.VarChar(20)
+  address         String?   @db.Text
+  dateOfBirth     DateTime? @map("date_of_birth") @db.Date
+  role            String    @default("EMPLOYEE") @db.VarChar(50)
+  status          String    @default("ACTIVE") @db.VarChar(50)
+  wpUserId        String?   @map("wp_user_id") @db.VarChar(50)
+  avatarUrl       String?   @map("avatar_url") @db.VarChar(500)
+  timezone        String    @default("UTC") @db.VarChar(100)
+  language        String    @default("en") @db.VarChar(10)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+  lastLogin       DateTime? @map("last_login")
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  phoneVerified   Boolean   @default(false) @map("phone_verified")
+
+  // Relations
+  accounts        Account[]
+  sessions        Session[]
+  employments     Employment[]
+  managedEmployees Employment[] @relation("ManagerRelation")
+  applications    Application[]
+  timerSessions   TimerSession[]
+  dailySummaries  DailySummary[]
+  payrolls        Payroll[]
+  leaveRequests   LeaveRequest[]
+  approvedLeaves  LeaveRequest[] @relation("ApproverRelation")
+  payments        Payment[]
+  invoices        Invoice[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  agentDevices    AgentDevice[]
+  fileUploads     FileUpload[]
+  postedGigs      Gig[]
+  reviewedApplications Application[] @relation("ReviewerRelation")
+  processedPayrollBatches PayrollBatch[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(uuid()) @db.Char(36)
+  userId            String  @map("user_id") @db.Char(36)
+  type              String  @db.VarChar(50)
+  provider          String  @db.VarChar(50)
+  providerAccountId String  @map("provider_account_id") @db.VarChar(255)
+  refreshToken      String? @map("refresh_token") @db.Text
+  accessToken       String? @map("access_token") @db.Text
+  expiresAt         Int?    @map("expires_at")
+  tokenType         String? @map("token_type") @db.VarChar(50)
+  scope             String? @db.VarChar(255)
+  idToken           String? @map("id_token") @db.Text
+  sessionState      String? @map("session_state") @db.VarChar(255)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId], map: "provider_account")
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid()) @db.Char(36)
+  sessionToken String   @unique @map("session_token") @db.VarChar(255)
+  userId       String   @map("user_id") @db.Char(36)
+  expires      DateTime
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String   @db.VarChar(255)
+  token      String   @db.VarChar(255)
+  expires    DateTime
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Employment {
+  id             String    @id @default(uuid()) @db.Char(36)
+  userId         String    @map("user_id") @db.Char(36)
+  employeeId     String    @unique @map("employee_id") @db.VarChar(50)
+  department     String?   @db.VarChar(100)
+  position       String?   @db.VarChar(100)
+  hireDate       DateTime  @map("hire_date") @db.Date
+  terminationDate DateTime? @map("termination_date") @db.Date
+  salary         Decimal?  @db.Decimal(12, 2)
+  currency       String    @default("USD") @db.VarChar(3)
+  employmentType String    @default("FULL_TIME") @map("employment_type") @db.VarChar(50)
+  managerId      String?   @map("manager_id") @db.Char(36)
+  status         String    @default("ACTIVE") @db.VarChar(50)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager User? @relation("ManagerRelation", fields: [managerId], references: [id])
+
+  @@map("employments")
+}
+
+model Payment {
+  id                    String    @id @default(uuid()) @db.Char(36)
+  userId                String    @map("user_id") @db.Char(36)
+  amount                Decimal   @db.Decimal(12, 2)
+  currency              String    @default("USD") @db.VarChar(3)
+  status                String    @default("PENDING") @db.VarChar(50)
+  paymentMethod         String    @map("payment_method") @db.VarChar(50)
+  sessionId             String?   @map("session_id") @db.VarChar(255)
+  stripePaymentIntentId String?   @map("stripe_payment_intent_id") @db.VarChar(255)
+  paypalOrderId         String?   @map("paypal_order_id") @db.VarChar(255)
+  description           String?   @db.Text
+  metadata              Json?
+  paidAt                DateTime? @map("paid_at")
+  failureReason         String?   @map("failure_reason") @db.Text
+  refundedAt            DateTime? @map("refunded_at")
+  refundAmount          Decimal?  @map("refund_amount") @db.Decimal(12, 2)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@map("payments")
+}
+
+model Invoice {
+  id             String    @id @default(uuid()) @db.Char(36)
+  invoiceNumber  String    @unique @map("invoice_number") @db.VarChar(50)
+  paymentId      String?   @map("payment_id") @db.Char(36)
+  userId         String    @map("user_id") @db.Char(36)
+  amount         Decimal   @db.Decimal(12, 2)
+  currency       String    @default("USD") @db.VarChar(3)
+  status         String    @default("DRAFT") @db.VarChar(50)
+  issuedAt       DateTime? @map("issued_at")
+  dueAt          DateTime? @map("due_at")
+  paidAt         DateTime? @map("paid_at")
+  pdfData        Bytes?    @map("pdf_data") @db.LongBlob
+  pdfUrl         String?   @map("pdf_url") @db.VarChar(500)
+  lineItems      Json?     @map("line_items")
+  taxAmount      Decimal   @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  discountAmount Decimal   @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  notes          String?   @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model SystemSettings {
+  id          String   @id @default(uuid()) @db.Char(36)
+  key         String   @unique @db.VarChar(100)
+  value       String   @db.Text
+  description String?  @db.Text
+  category    String?  @db.VarChar(50)
+  isPublic    Boolean  @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+// Additional models for completeness
+model Gig {
+  id             String        @id @default(uuid()) @db.Char(36)
+  title          String        @db.VarChar(200)
+  description    String?       @db.Text
+  requirements   String?       @db.Text
+  salaryMin      Decimal?      @map("salary_min") @db.Decimal(12, 2)
+  salaryMax      Decimal?      @map("salary_max") @db.Decimal(12, 2)
+  currency       String        @default("USD") @db.VarChar(3)
+  location       String?       @db.VarChar(200)
+  remoteAllowed  Boolean       @default(false) @map("remote_allowed")
+  employmentType String        @default("FULL_TIME") @map("employment_type") @db.VarChar(50)
+  department     String?       @db.VarChar(100)
+  status         String        @default("ACTIVE") @db.VarChar(50)
+  postedBy       String        @map("posted_by") @db.Char(36)
+  postedAt       DateTime      @default(now()) @map("posted_at")
+  expiresAt      DateTime?     @map("expires_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  poster       User          @relation(fields: [postedBy], references: [id])
+  applications Application[]
+
+  @@map("gigs")
+}
+
+model Application {
+  id          String    @id @default(uuid()) @db.Char(36)
+  userId      String    @map("user_id") @db.Char(36)
+  gigId       String?   @map("gig_id") @db.Char(36)
+  status      String    @default("PENDING") @db.VarChar(50)
+  appliedAt   DateTime  @default(now()) @map("applied_at")
+  reviewedAt  DateTime? @map("reviewed_at")
+  reviewerId  String?   @map("reviewer_id") @db.Char(36)
+  notes       String?   @db.Text
+  resumeUrl   String?   @map("resume_url") @db.VarChar(500)
+  coverLetter String?   @map("cover_letter") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gig      Gig?  @relation(fields: [gigId], references: [id])
+  reviewer User? @relation("ReviewerRelation", fields: [reviewerId], references: [id])
+
+  @@map("applications")
+}
+
+model TimerSession {
+  id              String    @id @default(uuid()) @db.Char(36)
+  userId          String    @map("user_id") @db.Char(36)
+  startTime       DateTime  @map("start_time")
+  endTime         DateTime? @map("end_time")
+  durationSeconds Int?      @map("duration_seconds")
+  activityType    String    @default("WORK") @map("activity_type") @db.VarChar(50)
+  description     String?   @db.Text
+  projectId       String?   @map("project_id") @db.Char(36)
+  isBillable      Boolean   @default(true) @map("is_billable")
+  hourlyRate      Decimal?  @map("hourly_rate") @db.Decimal(10, 2)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("timer_sessions")
+}
+
+model DailySummary {
+  id               String   @id @default(uuid()) @db.Char(36)
+  userId           String   @map("user_id") @db.Char(36)
+  date             DateTime @db.Date
+  totalHours       Decimal  @default(0) @map("total_hours") @db.Decimal(5, 2)
+  billableHours    Decimal  @default(0) @map("billable_hours") @db.Decimal(5, 2)
+  breakHours       Decimal  @default(0) @map("break_hours") @db.Decimal(5, 2)
+  overtimeHours    Decimal  @default(0) @map("overtime_hours") @db.Decimal(5, 2)
+  activities       Json?
+  performanceScore Decimal? @map("performance_score") @db.Decimal(3, 2)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date], map: "user_date")
+  @@map("daily_summaries")
+}
+
+model PayrollBatch {
+  id              String    @id @default(uuid()) @db.Char(36)
+  batchNumber     String    @unique @map("batch_number") @db.VarChar(50)
+  payPeriodStart  DateTime  @map("pay_period_start") @db.Date
+  payPeriodEnd    DateTime  @map("pay_period_end") @db.Date
+  status          String    @default("DRAFT") @db.VarChar(50)
+  totalAmount     Decimal   @default(0) @map("total_amount") @db.Decimal(15, 2)
+  currency        String    @default("USD") @db.VarChar(3)
+  processedBy     String?   @map("processed_by") @db.Char(36)
+  processedAt     DateTime? @map("processed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  processor User?     @relation(fields: [processedBy], references: [id])
+  payrolls  Payroll[]
+
+  @@map("payroll_batches")
+}
+
+model Payroll {
+  id               String       @id @default(uuid()) @db.Char(36)
+  batchId          String       @map("batch_id") @db.Char(36)
+  userId           String       @map("user_id") @db.Char(36)
+  baseSalary       Decimal      @map("base_salary") @db.Decimal(12, 2)
+  overtimePay      Decimal      @default(0) @map("overtime_pay") @db.Decimal(12, 2)
+  bonus            Decimal      @default(0) @db.Decimal(12, 2)
+  deductions       Decimal      @default(0) @db.Decimal(12, 2)
+  taxes            Decimal      @default(0) @db.Decimal(12, 2)
+  netPay           Decimal      @map("net_pay") @db.Decimal(12, 2)
+  currency         String       @default("USD") @db.VarChar(3)
+  hoursWorked      Decimal      @default(0) @map("hours_worked") @db.Decimal(5, 2)
+  overtimeHours    Decimal      @default(0) @map("overtime_hours") @db.Decimal(5, 2)
+  payDate          DateTime?    @map("pay_date") @db.Date
+  status           String       @default("PENDING") @db.VarChar(50)
+  paymentMethod    String?      @map("payment_method") @db.VarChar(50)
+  paymentReference String?      @map("payment_reference") @db.VarChar(100)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  batch PayrollBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payrolls")
+}
+
+model LeaveRequest {
+  id              String    @id @default(uuid()) @db.Char(36)
+  userId          String    @map("user_id") @db.Char(36)
+  type            String    @db.VarChar(50)
+  startDate       DateTime  @map("start_date") @db.Date
+  endDate         DateTime  @map("end_date") @db.Date
+  daysRequested   Int       @map("days_requested")
+  reason          String?   @db.Text
+  status          String    @default("PENDING") @db.VarChar(50)
+  approvedBy      String?   @map("approved_by") @db.Char(36)
+  approvedAt      DateTime? @map("approved_at")
+  rejectionReason String?   @map("rejection_reason") @db.Text
+  isEmergency     Boolean   @default(false) @map("is_emergency")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approver User? @relation("ApproverRelation", fields: [approvedBy], references: [id])
+
+  @@map("leave_requests")
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Char(36)
+  userId    String    @map("user_id") @db.Char(36)
+  title     String    @db.VarChar(200)
+  message   String    @db.Text
+  type      String    @default("INFO") @db.VarChar(50)
+  category  String?   @db.VarChar(50)
+  isRead    Boolean   @default(false) @map("is_read")
+  actionUrl String?   @map("action_url") @db.VarChar(500)
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Char(36)
+  userId     String?  @map("user_id") @db.Char(36)
+  action     String   @db.VarChar(100)
+  entityType String?  @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.Char(36)
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model AgentDevice {
+  id          String    @id @default(uuid()) @db.Char(36)
+  userId      String    @map("user_id") @db.Char(36)
+  deviceName  String    @map("device_name") @db.VarChar(100)
+  deviceId    String    @unique @map("device_id") @db.VarChar(255)
+  apiKeyHash  String    @map("api_key_hash") @db.VarChar(255)
+  lastSeen    DateTime? @map("last_seen")
+  isActive    Boolean   @default(true) @map("is_active")
+  permissions Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("agent_devices")
+}
+
+model FileUpload {
+  id           String   @id @default(uuid()) @db.Char(36)
+  userId       String   @map("user_id") @db.Char(36)
+  filename     String   @db.VarChar(255)
+  originalName String   @map("original_name") @db.VarChar(255)
+  mimeType     String?  @map("mime_type") @db.VarChar(100)
+  fileSize     Int?     @map("file_size")
+  filePath     String?  @map("file_path") @db.VarChar(500)
+  fileUrl      String?  @map("file_url") @db.VarChar(500)
+  category     String?  @db.VarChar(50)
+  entityType   String?  @map("entity_type") @db.VarChar(50)
+  entityId     String?  @map("entity_id") @db.Char(36)
+  isPublic     Boolean  @default(false) @map("is_public")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("file_uploads")
+}

@@ -1,0 +1,108 @@
+2025-10-20T09:00:23.509819Z  WARN daemon_server: turborepo_lib::commands::daemon: daemon already running
+2025-10-20T09:00:24.453150Z  WARN build:build_inner: turborepo_repository::package_graph::builder: Unable to calculate transitive closures: Workspace 'packages/db' not found in lockfile
+2025-10-20T09:00:24.454929Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies")}
+2025-10-20T09:00:24.455075Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:00:25.158875Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\web\\.turbo"), AnchoredSystemPathBuf(".turbo\\daemon\\f60f3d3a177596fc-turbo.log.2025-10-20"), AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf("node_modules"), AnchoredSystemPathBuf("packages\\web")}
+2025-10-20T09:00:25.158919Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }, WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:00:25.815110Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra"), AnchoredSystemPathBuf("packages\\infra\\.turbo")}
+2025-10-20T09:00:25.815156Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }}))
+2025-10-20T09:03:06.855520Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("_tmp_560_371028f874977b545b5a2b66ca392769")}
+2025-10-20T09:03:06.855610Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:03:06.955792Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("_tmp_560_371028f874977b545b5a2b66ca392769"), AnchoredSystemPathBuf("")}
+2025-10-20T09:03:06.956458Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:05:13.388692Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\db\\node_modules"), AnchoredSystemPathBuf("packages\\infra\\node_modules"), AnchoredSystemPathBuf("packages\\web\\node_modules")}
+2025-10-20T09:05:13.388751Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }, WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }, WorkspacePackage { name: Other("@tts-pms/db"), path: AnchoredSystemPathBuf("packages\\db") }}))
+2025-10-20T09:05:13.632757Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:13.632846Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:13.633639Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\db"), AnchoredSystemPathBuf("packages\\infra\\node_modules"), AnchoredSystemPathBuf("packages\\infra"), AnchoredSystemPathBuf("packages\\web"), AnchoredSystemPathBuf("packages\\web\\node_modules"), AnchoredSystemPathBuf("packages\\db\\node_modules")}
+2025-10-20T09:05:13.633673Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }, WorkspacePackage { name: Other("@tts-pms/db"), path: AnchoredSystemPathBuf("packages\\db") }, WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }}))
+2025-10-20T09:05:13.633711Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:13.633739Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:13.633859Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:15.544605Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra\\node_modules"), AnchoredSystemPathBuf("packages\\db\\node_modules"), AnchoredSystemPathBuf("packages\\web\\node_modules")}
+2025-10-20T09:05:15.544659Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/db"), path: AnchoredSystemPathBuf("packages\\db") }, WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }, WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }}))
+2025-10-20T09:05:15.660779Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:15.660821Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:15.660923Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:05:15.661120Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("pnpm-lock.yaml.2885335662")}
+2025-10-20T09:05:15.661142Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:05:15.686907Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("node_modules"), AnchoredSystemPathBuf("pnpm-lock.yaml"), AnchoredSystemPathBuf("pnpm-lock.yaml.2885335662"), AnchoredSystemPathBuf("")}
+2025-10-20T09:05:15.686935Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:06:16.911622Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie")}
+2025-10-20T09:06:16.911828Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:06:17.016703Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\2.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\3.cookie")}
+2025-10-20T09:06:17.016731Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:06:20.343215Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\web\\next-env.d.ts")}
+2025-10-20T09:06:20.343273Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }}))
+2025-10-20T09:07:54.876483Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra\\package.json")}
+2025-10-20T09:07:54.876517Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }}))
+2025-10-20T09:07:55.071140Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra\\package.json")}
+2025-10-20T09:07:55.071169Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }}))
+2025-10-20T09:07:55.071205Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:08:34.590471Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra\\.eslintrc.json")}
+2025-10-20T09:08:34.590505Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }}))
+2025-10-20T09:08:35.040969Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra"), AnchoredSystemPathBuf("packages\\infra\\.eslintrc.json")}
+2025-10-20T09:08:35.041139Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }}))
+2025-10-20T09:08:35.041220Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:09:10.621344Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(""), AnchoredSystemPathBuf("_tmp_9940_c01b191ae681b90768731f4b71a3ee4f")}
+2025-10-20T09:09:10.621441Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:09:24.765238Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra\\node_modules")}
+2025-10-20T09:09:24.765361Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }}))
+2025-10-20T09:09:24.765842Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:09:25.408233Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("node_modules"), AnchoredSystemPathBuf("pnpm-lock.yaml.1650751346"), AnchoredSystemPathBuf(""), AnchoredSystemPathBuf("pnpm-lock.yaml")}
+2025-10-20T09:09:25.408282Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:10:15.385703Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\4.cookie")}
+2025-10-20T09:10:15.385908Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:10:15.556970Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\5.cookie"), AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\6.cookie")}
+2025-10-20T09:10:15.557058Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:11:28.919540Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\infra\\.eslintrc.json")}
+2025-10-20T09:11:28.919582Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@tts-pms/infra"), path: AnchoredSystemPathBuf("packages\\infra") }}))
+2025-10-20T09:12:20.259015Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\7.cookie")}
+2025-10-20T09:12:20.259086Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:12:20.356396Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\9.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\8.cookie"), AnchoredSystemPathBuf(".turbo\\cookies")}
+2025-10-20T09:12:20.356435Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:14:27.689253Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("package.json")}
+2025-10-20T09:14:27.689303Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(All)
+2025-10-20T09:16:39.967699Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("_tmp_4432_6b34f690706aa4b973c0e1c5c84c3b39"), AnchoredSystemPathBuf("")}
+2025-10-20T09:16:39.967828Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:16:45.957110Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("node_modules")}
+2025-10-20T09:16:45.957148Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:16:47.275608Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("node_modules"), AnchoredSystemPathBuf("pnpm-lock.yaml.574662567")}
+2025-10-20T09:16:47.275713Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:16:47.386402Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("pnpm-lock.yaml"), AnchoredSystemPathBuf("node_modules"), AnchoredSystemPathBuf(""), AnchoredSystemPathBuf("pnpm-lock.yaml.574662567")}
+2025-10-20T09:16:47.386463Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:19:37.301171Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\12.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\11.cookie"), AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\10.cookie")}
+2025-10-20T09:19:37.301263Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:23:29.756916Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\web\\package.json")}
+2025-10-20T09:23:29.756999Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }}))
+2025-10-20T09:23:30.020977Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\web\\package.json")}
+2025-10-20T09:23:30.021015Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }}))
+2025-10-20T09:23:30.022367Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-10-20T09:24:20.557766Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("_tmp_7000_7d9056085d492c2e17ead0893d196748")}
+2025-10-20T09:24:20.557833Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:24:20.692231Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("_tmp_7000_7d9056085d492c2e17ead0893d196748"), AnchoredSystemPathBuf("")}
+2025-10-20T09:24:20.692317Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:24:26.856541Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\web\\node_modules")}
+2025-10-20T09:24:26.856579Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }}))
+2025-10-20T09:24:27.227784Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(""), AnchoredSystemPathBuf("pnpm-lock.yaml"), AnchoredSystemPathBuf("pnpm-lock.yaml.1675835142")}
+2025-10-20T09:24:27.227811Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:24:27.260847Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(""), AnchoredSystemPathBuf("node_modules")}
+2025-10-20T09:24:27.260874Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:24:32.834447Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\13.cookie")}
+2025-10-20T09:24:32.834600Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:24:32.856580Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\14.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\15.cookie")}
+2025-10-20T09:24:32.856613Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:26:59.979471Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\web\\.eslintrc.json")}
+2025-10-20T09:26:59.979590Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("tts-pms-web"), path: AnchoredSystemPathBuf("packages\\web") }}))
+2025-10-20T09:30:09.662060Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\16.cookie")}
+2025-10-20T09:30:09.662231Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:30:09.856373Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo\\cookies\\17.cookie"), AnchoredSystemPathBuf(".turbo\\cookies\\18.cookie")}
+2025-10-20T09:30:09.856444Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-10-20T09:37:59.360991Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("package.json")}
+2025-10-20T09:37:59.361126Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(All)
+2025-10-20T09:37:59.686725Z  WARN build:resolve_lockfile: turborepo_repository::package_graph::builder: Issues occurred when constructing package graph. Turbo will function, but some features may not be available: could not resolve workspaces: io error: The system cannot find the file specified. (os error 2)
+2025-10-20T09:37:59.689769Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("package.json")}
+2025-10-20T09:37:59.689800Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(All)
+2025-10-20T09:37:59.717313Z  WARN build:resolve_lockfile: turborepo_repository::package_graph::builder: Issues occurred when constructing package graph. Turbo will function, but some features may not be available: could not resolve workspaces: io error: The system cannot find the file specified. (os error 2)
+2025-10-20T09:40:40.468951Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(""), AnchoredSystemPathBuf("uploads"), AnchoredSystemPathBuf("cache")}
+2025-10-20T09:40:40.468987Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
