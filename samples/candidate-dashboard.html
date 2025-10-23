@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMS Role-Based Screens Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dashboard-content { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .role-selector-btn.active { background-color: #f59e0b; color: #ffffff; }
+        
+        /* General Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            background-color: #ffffff; padding: 30px; border-radius: 12px;
+            max-width: 800px; width: 90%; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: scale(0.95); transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible { opacity: 1; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-content h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #b45309; }
+        .modal-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #44403c; }
+        
+        /* Evaluation Form Specific Styles */
+        .evaluation-form-container .card { border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .evaluation-form-container .header-info { background-color: #f3f4f6; border-radius: 1rem 1rem 0 0; padding: 1.5rem; }
+        .evaluation-form-container .form-section { border-bottom: 1px solid #e5e7eb; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .evaluation-form-container .form-section:last-child { border-bottom: none; }
+        .evaluation-form-container .gemini-btn-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        @media (min-width: 640px) { .evaluation-form-container .gemini-btn-group { flex-direction: row; } }
+        .evaluation-form-container .highlight-field {
+            border: 2px solid #ef4444 !important; /* Red border */
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5); /* Red glow */
+            border-radius: 1rem;
+        }
+        .evaluation-form-container .results-modal-content { max-width: 500px; }
+
+        /* OTP Input Styles */
+        .otp-container { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .otp-input { 
+            width: 50px; height: 50px; 
+            text-align: center; font-size: 1.5rem; font-weight: bold;
+            border: 2px solid #d1d5db; border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .otp-input:focus { 
+            border-color: #f59e0b; outline: none; 
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        .otp-input.filled { border-color: #10b981; background-color: #f0fdf4; }
+        
+        /* Countdown Timer */
+        .countdown { 
+            font-size: 0.875rem; 
+            color: #ef4444; font-weight: 600;
+            margin: 10px 0;
+        }
+
+        /* Application Form Styles */
+        .application-step { display: none; }
+        .application-step.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+        .step-indicator { display: flex; justify-content: center; margin-bottom: 2rem; }
+        .step { display: flex; flex-direction: column; align-items: center; margin: 0 1rem; }
+        .step-number { 
+            width: 40px; height: 40px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; margin-bottom: 0.5rem;
+            background-color: #e5e7eb; color: #6b7280;
+        }
+        .step.active .step-number { background-color: #f59e0b; color: white; }
+        .step.completed .step-number { background-color: #10b981; color: white; }
+        .step-label { font-size: 0.875rem; color: #6b7280; }
+        .step.active .step-label { color: #f59e0b; font-weight: 600; }
+        .step.completed .step-label { color: #10b981; }
+
+        /* File Upload Styles */
+        .file-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background-color: #f9fafb;
+        }
+        .file-upload-area:hover {
+            border-color: #f59e0b;
+            background-color: #fef3c7;
+        }
+        .file-upload-area.dragover {
+            border-color: #f59e0b;
+            background-color: #fef3c7;
+        }
+        .upload-icon {
+            font-size: 3rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        /* Webcam Styles */
+        .webcam-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        #webcam-video {
+            width: 100%;
+            border-radius: 8px;
+            background-color: #000;
+        }
+        .webcam-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 min-h-screen p-4">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-stone-900">WorkHub Role-Based Dashboard Prototype</h1>
+            <p class="text-md text-stone-600 mt-1">Simulated User Journeys for Tech & Talent Solutions Ltd.</p>
+        </header>
+
+        <!-- Role Selector/Flow Buttons -->
+        <div class="flex flex-wrap justify-center gap-2 p-3 bg-white rounded-xl shadow-md mb-6">
+            <button data-screen="signup" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">Sign Up / In</button>
+            <button data-screen="visitor" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">1. Visitor (Evaluation)</button>
+            <button data-screen="candidate" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">2. Candidate (Application)</button>
+            <button data-screen="new_employee" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">3. New Employee (Training)</button>
+            <button data-screen="employee" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">4. Employee (Full Access)</button>
+            <button data-screen="manager" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">5. Manager</button>
+            <button data-screen="ceo" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">6. CEO</button>
+        </div>
+
+        <!-- Main Content Container -->
+        <div id="screen-container" class="bg-white p-6 md:p-10 rounded-xl shadow-lg">
+            <!-- Content will be injected here -->
+        </div>
+    </div>
+    
+    <!-- Modal for Legal Documents -->
+    <div id="legal-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modal-content-body"></div>
+            <div class="mt-6 text-right">
+                <button onclick="closeModal('legal-modal')" class="bg-stone-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-stone-600 transition">
+                    Close & Accept
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Evaluation Form Results -->
+    <div id="resultsModal" class="modal-overlay">
+        <div class="modal-content results-modal-content text-center">
+            <h2 id="modalTitle" class="text-3xl font-bold mb-4"></h2>
+            <div id="modalStatusIcon" class="mx-auto my-4 w-16 h-16 flex items-center justify-center rounded-full"></div>
+            <p id="modalMessage" class="text-lg text-gray-700 mb-6"></p>
+            <div id="rejectionReasons" class="text-left bg-red-50 p-4 rounded-lg border border-red-200 hidden">
+                <p class="font-semibold text-red-700 mb-2">Details:</p>
+                <ul id="reasonsList" class="list-disc ml-5 text-sm text-red-600 space-y-1"></ul>
+            </div>
+            <button onclick="closeModal('resultsModal')" class="mt-6 bg-gray-500 text-white py-2 px-6 rounded-full font-medium hover:bg-gray-600 transition duration-300">
+                Close and Review
+            </button>
+            <p id="firestoreStatus" class="mt-4 text-xs text-gray-500"></p>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div id="otp-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold text-amber-700 mb-2 text-center">Verify Your Identity</h2>
+            <p class="text-sm text-stone-600 text-center mb-6">Enter the verification codes sent to your email and mobile</p>
+            
+            <!-- Email OTP Section -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="font-semibold text-blue-800 mb-2">📧 Email Verification</h3>
+                <p class="text-sm text-blue-600 mb-3">OTP sent to: <span id="verify-email" class="font-mono">user@gmail.com</span></p>
+                <div class="otp-container" id="email-otp-container">
+                    <input type="text" maxlength="1" class="otp-input" data-index="0">
+                    <input type="text" maxlength="1" class="otp-input" data-index="1">
+                    <input type="text" maxlength="1" class="otp-input" data-index="2">
+                    <input type="text" maxlength="1" class="otp-input" data-index="3">
+                    <input type="text" maxlength="1" class="otp-input" data-index="4">
+                    <input type="text" maxlength="1" class="otp-input" data-index="5">
+                </div>
+                <div class="countdown" id="email-countdown">02:00</div>
+                <button class="text-sm text-blue-600 hover:text-blue-800" id="resend-email-otp">Resend Email OTP</button>
+            </div>
+
+            <!-- Mobile OTP Section -->
+            <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 class="font-semibold text-green-800 mb-2">📱 Mobile Verification</h3>
+                <p class="text-sm text-green-600 mb-3">OTP sent to: <span id="verify-mobile" class="font-mono">+92 XXX XXXXXXX</span></p>
+                <div class="otp-container" id="mobile-otp-container">
+                    <input type="text" maxlength="1" class="otp-input" data-index="0">
+                    <input type="text" maxlength="1" class="otp-input" data-index="1">
+                    <input type="text" maxlength="1" class="otp-input" data-index="2">
+                    <input type="text" maxlength="1" class="otp-input" data-index="3">
+                    <input type="text" maxlength="1" class="otp-input" data-index="4">
+                    <input type="text" maxlength="1" class="otp-input" data-index="5">
+                </div>
+                <div class="countdown" id="mobile-countdown">02:00</div>
+                <button class="text-sm text-green-600 hover:text-green-800" id="resend-mobile-otp">Resend SMS OTP</button>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal('otp-modal')" class="flex-1 bg-stone-500 text-white py-3 rounded-lg font-semibold hover:bg-stone-600 transition">
+                    Cancel
+                </button>
+                <button id="verify-otp-btn" class="flex-1 bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700 transition opacity-50 cursor-not-allowed" disabled>
+                    Verify & Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL APP STATE AND CONFIG ---
+        const screenContainer = document.getElementById('screen-container');
+        const roleButtons = document.querySelectorAll('.role-selector-btn');
+        
+        const COMPANY_NAME = "Tech Solutions Ltd.";
+        const CONTACT_EMAIL = "contact@workhub.pk";
+        const EFFECTIVE_DATE = "2025-10-07";
+        const WEBSITE_URL = "https://www.workhub.pk";
+        const appId = "pms-prototype-v1";
+
+        let db, auth, userId = null;
+        let otpTimers = { email: null, mobile: null };
+        let currentOTPData = { email: null, mobile: null };
+        let currentApplicationData = {};
+        let selectedJobType = '';
+
+        // Reusable HTML snippets for sign-in/sign-up forms
+        const signInFormHtml = `
+            <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                🔑 **Email OTP Verification Required** on Sign-Up. Only **@gmail.com** emails accepted.
+            </div>
+            <div>
+                <label for="email" class="block text-sm font-medium text-stone-700">Email Address (@gmail.com only)</label>
+                <input type="email" id="email" class="mt-1 block w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="user@gmail.com">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-stone-700">Password</label>
+                <input type="password" id="password" class="mt-1 block w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="********">
+            </div>
+            <button type="submit" id="auth-submit-btn" class="w-full bg-amber-600 text-white py-2 rounded-lg font-semibold hover:bg-amber-700 transition">Sign In</button>
+            <p class="text-center text-sm text-stone-500 mt-4"><a href="#" class="text-amber-600 hover:underline">Forgot Password?</a></p>
+        `;
+
+        const signUpExtraFieldsHtml = `
+            <div>
+                <label for="full_name" class="block text-sm font-medium text-stone-700">Full Name</label>
+                <input type="text" id="full_name" class="mt-1 block w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Full Name">
+            </div>
+        `;
+
+        const signUpTermsHtml = `
+            <div class="flex items-center pt-2">
+                <input type="checkbox" id="terms-agree" class="h-4 w-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500">
+                <label for="terms-agree" class="ml-2 block text-sm text-stone-700">
+                    I agree to the 
+                    <a href="#" class="text-amber-600 hover:underline font-semibold" onclick="event.preventDefault(); openModal('legal-modal', 'Terms & Conditions', 'full-terms');">Terms & Conditions</a> 
+                    and 
+                    <a href="#" class="text-amber-600 hover:underline font-semibold" onclick="event.preventDefault(); openModal('legal-modal', 'Privacy Policy', 'full-privacy');">Privacy Policy</a>
+                </label>
+            </div>
+        `;
+
+        // --- SCREEN TEMPLATES ---
+        const screens = {
+            signup: `
+                <div class="max-w-md mx-auto">
+                    <h2 class="text-2xl font-bold text-amber-700 mb-6 text-center">Join WorkHub</h2>
+                    <div id="auth-tabs" class="flex justify-center mb-6 space-x-4">
+                        <button data-tab="signin" class="auth-tab text-lg font-semibold border-b-2 border-transparent text-stone-400 hover:text-stone-600 pb-1">Sign In</button>
+                        <button data-tab="signup" class="auth-tab text-lg font-semibold border-b-2 border-transparent text-stone-400 hover:text-stone-600 pb-1">Sign Up</button>
+                    </div>
+                    <form id="auth-form" class="space-y-4"></form>
+                </div>
+            `,
+            visitor: `
+                <div class="max-w-4xl mx-auto dashboard-content">
+                    <h2 class="text-3xl font-bold text-stone-800 mb-4">👤 Visitor Dashboard</h2>
+                    <p class="text-amber-600 font-semibold mb-6">Status: Registered - Action Required</p>
+                    <div class="bg-amber-50 border-l-4 border-amber-600 p-4 rounded-lg shadow-sm mb-6">
+                        <h3 class="font-bold text-lg text-amber-800 mb-1">Mandatory: Pre-Requirements Evaluation</h3>
+                        <p class="text-sm text-amber-700">You must review and agree to the legal documents to be eligible for the next step.</p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-stone-100 p-6 rounded-xl shadow-inner">
+                            <h4 class="text-xl font-semibold text-stone-700 mb-4">Legal Documents Review</h4>
+                            <div class="flex justify-start mb-4 space-x-4 border-b border-stone-300">
+                                <button data-tab="terms" class="legal-tab text-sm font-semibold border-b-2 border-transparent text-stone-400 hover:text-stone-600 pb-1">Terms & Conditions</button>
+                                <button data-tab="privacy" class="legal-tab text-sm font-semibold border-b-2 border-transparent text-stone-400 hover:text-stone-600 pb-1">Privacy Policy</button>
+                            </div>
+                            <div id="legal-content" class="h-64 overflow-y-auto bg-white p-3 rounded-lg text-sm text-stone-700 border border-stone-200"></div>
+                            <div class="mt-4 flex items-center">
+                                <input type="checkbox" id="legal-agree" class="h-4 w-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500">
+                                <label for="legal-agree" class="ml-2 block text-sm text-stone-700">I have read and agree to all policies above.</label>
+                            </div>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-xl shadow-inner flex flex-col justify-center">
+                            <h4 class="text-xl font-semibold text-stone-700 mb-4">Evaluate & Eligibility</h4>
+                            <p class="text-sm text-stone-600 mb-4">Once you agree to the policies, you can begin the evaluation process.</p>
+                            <button id="submit-evaluation" class="w-full bg-amber-600 text-white py-2 rounded-lg font-semibold hover:bg-amber-700 transition opacity-50 cursor-not-allowed" disabled>Evaluate Now</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            evaluation: `
+                <div class="evaluation-form-container">
+                    <div class="card bg-white">
+                        <div class="header-info text-center">
+                            <h1 class="text-xl font-bold text-gray-800 mb-1">WorkHub Applicant Evaluation</h1>
+                            <p class="text-sm text-gray-500">Comprehensive assessment for remote data entry positions.</p>
+                        </div>
+                        <div class="p-6 sm:p-10">
+                            <div class="bg-blue-50 text-center p-3 rounded-lg text-sm mb-6 border border-blue-200">
+                                <strong class="text-red-600">Review Window: Quarterly</strong> | 
+                                <strong class="text-green-600">Operational Hours: 9:00 AM - 6:00 PM PKT</strong>
+                                <br>
+                                All communications utilize the <a href="https://www.workhub.pk" class="text-blue-600 font-medium hover:underline">workhub.pk</a> domain.
+                            </div>
+                            <form id="applicantForm">
+                                <input type="hidden" id="visitor_real_id" name="visitor_real_id">
+                                <input type="hidden" id="attempt_count" name="attempt_count">
+                                <div class="form-section" data-field="q1_age">
+                                  <h5 class="font-semibold text-gray-700 mb-3">Q1. What is your age?</h5>
+                                  <select id="q1_age" class="form-select w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="" selected disabled>Select your age</option>
+                                  </select>
+                                  <div id="sub_q1_minor" class="hidden mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg">
+                                    <p class="font-medium text-sm text-yellow-800 mb-2">You are a minor. At the next stage, you will be required to commit to providing your father's/guardian's written permission.</p>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Are you agree?</label>
+                                    <select id="q1b_guardian_agree" class="form-select w-full p-2 border border-gray-300 rounded-lg" data-field="q1b_guardian_agree">
+                                      <option value="" selected disabled>Select option</option>
+                                      <option value="Yes">Yes</option><option value="No">No</option>
+                                    </select>
+                                  </div>
+                                  <div id="sub_q1_senior" class="hidden mt-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg space-y-3">
+                                    <p class="font-medium text-sm text-green-800 mb-3">We highly value experience. As a special case, please help us understand your circumstances for continued contribution.</p>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Please briefly outline your professional commitment and key skills for this role:</label>
+                                    <textarea id="q1b_senior_reason" rows="2" class="form-input w-full p-2 border border-gray-300 rounded-lg" placeholder="Example: I am retired but wish to contribute 4 hours daily..."></textarea>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Are you physically fit and able to perform daily remote work for 4+ hours without discomfort?</label>
+                                    <select id="q1c_physical_fit" class="form-select w-full p-2 border border-gray-300 rounded-lg" data-field="q1c_physical_fit"><option value="" selected disabled>Select option</option><option value="Yes">Yes</option><option value="No">No</option></select>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Do you have any medical condition or situation requiring a full-time caretaker that might impact your daily performance?</label>
+                                    <select id="q1d_caretaking" class="form-select w-full p-2 border border-gray-300 rounded-lg" data-field="q1d_caretaking"><option value="" selected disabled>Select option</option><option value="Yes">Yes</option><option value="No">No</option></select>
+                                  </div>
+                                </div>
+                                <div class="form-section" data-field="q2_device_type"><h5 class="font-semibold text-gray-700 mb-3">Q2. Type of your device?</h5><select id="q2_device_type" class="form-select w-full p-2 border border-gray-300 rounded-lg"><option value="" selected disabled>Select one device type</option><option value="Android">Android</option><option value="iPhone">iPhone</option><option value="PC">PC</option><option value="Laptop">Laptop</option><option value="Tablet">Tablet</option><option value="Chromebook">Chromebook</option></select></div>
+                                <div class="form-section" data-field="q3_ram"><h5 class="font-semibold text-gray-700 mb-3">Q3. RAM Capacity?</h5><input type="text" id="q3_ram" class="form-input w-full p-2 border border-gray-300 rounded-lg" placeholder="Example: 4GB, 8GB, 16GB"></div>
+                                <div class="form-section" data-field="q4_processor"><h5 class="font-semibold text-gray-700 mb-3">Q4. Processor model/version?</h5><div class="gemini-btn-group mb-2"><input type="text" id="q4_processor" class="form-input w-full p-2 border border-gray-300 rounded-lg flex-grow" placeholder="Example: Intel Core i5 (8th Gen), AMD Ryzen 5 3600"><button type="button" id="suggestProcessorBtn" class="flex-shrink-0 bg-purple-600 text-white py-2 px-4 rounded-lg font-bold text-sm hover:bg-purple-700 transition duration-300 shadow-md">✨ Suggest Processor Detail</button></div><div id="processorSuggestionOutput" class="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg hidden"><p id="suggestionText" class="text-sm text-indigo-800"></p><p id="processorLoadingIndicator" class="text-sm text-gray-500 hidden mt-1"></p></div><div id="processorErrorOutput" class="mt-2 p-3 bg-red-100 border border-red-300 rounded-lg hidden"><p class="text-sm text-red-800"></p></div></div>
+                                <div class="form-section" data-field="q5_stable_internet"><h5 class="font-semibold text-gray-700 mb-3">Q5. Do you have a stable internet connection?</h5><select id="q5_stable_internet" class="form-select w-full p-2 border border-gray-300 rounded-lg"><option value="" selected disabled>Select option</option><option value="Yes">Yes</option><option value="No">No</option></select><div id="sub_q5_internet_details" class="hidden mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg space-y-3"><label class="block text-sm font-medium text-gray-700">Provider Name?</label><input type="text" id="q5b_provider" class="form-input w-full p-2 border border-gray-300 rounded-lg" placeholder="e.g., PTCL, StormFiber"><label class="block text-sm font-medium text-gray-700">Link Speed (Download/Upload)?</label><input type="text" id="q5c_link_speed" class="form-input w-full p-2 border border-gray-300 rounded-lg" placeholder="e.g., 10 Mbps / 5 Mbps"><label class="block text-sm font-medium text-gray-700">Number of users sharing this link?</label><input type="number" id="q5d_num_users" class="form-input w-full p-2 border border-gray-300 rounded-lg" placeholder="e.g., 2"><label class="block text-sm font-medium text-gray-700">Upload speedtest.net result screenshot & URL/ID:</label><input type="text" id="q5e_speedtest_url" class="form-input w-full p-2 border border-gray-300 rounded-lg" placeholder="Paste URL/ID here (Screenshot upload required at next stage)"></div></div>
+                                <div class="form-section" data-field="q6_profession"><h5 class="font-semibold text-gray-700 mb-3">Q6. What is your profession?</h5><select id="q6_profession" class="form-select w-full p-2 border border-gray-300 rounded-lg"><option value="" selected disabled>Select your profession</option><option value="Self employed">Self employed</option><option value="Full time employee">Full time employee</option><option value="Student">Student</option><option value="House wife">House wife</option><option value="Looking for a job">Looking for a job</option><option value="Retired">Retired</option></select><div id="professionContextContainer" class="mt-4 hidden"><button type="button" id="getProfessionContextBtn" class="bg-blue-600 text-white py-2 px-4 rounded-lg font-bold text-sm hover:bg-blue-700 transition duration-300 shadow-md">✨ Get Role Context for Profession</button><div id="professionContextOutput" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden"><p id="contextText" class="text-sm text-blue-800"></p><p id="contextLoadingIndicator" class="text-sm text-gray-500 hidden mt-1"></p></div><div id="contextErrorOutput" class="mt-2 p-3 bg-red-100 border border-red-300 rounded-lg hidden"><p class="text-sm text-red-800"></p></div></div></div>
+                                <div class="form-section" data-field="q7_daily_time"><h5 class="font-semibold text-gray-700 mb-3">Q7. Can you spare a minimum 2-4 hours time for data entry work daily?</h5><select id="q7_daily_time" class="form-select w-full p-2 border border-gray-300 rounded-lg"><option value="" selected disabled>Select option</option><option value="Yes">Yes</option><option value="No">No</option></select><div id="sub_q7_time_windows" class="hidden mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg"><p class="font-medium text-sm text-yellow-800 mb-3">Please mention your time windows for availability (multiple can be selected):</p><div class="space-y-2"><div class="flex items-center"><input type="checkbox" id="time_window_1" name="time_windows" value="11AM-4PM PKT" class="h-4 w-4 text-blue-600 border-gray-300 rounded"><label for="time_window_1" class="ml-2 text-sm text-gray-700">11 AM - 4 PM PKT</label></div><div class="flex items-center"><input type="checkbox" id="time_window_2" name="time_windows" value="4PM-9PM PKT" class="h-4 w-4 text-blue-600 border-gray-300 rounded"><label for="time_window_2" class="ml-2 text-sm text-gray-700">4 PM - 9 PM PKT</label></div><div class="flex items-center"><input type="checkbox" id="time_window_3" name="time_windows" value="9PM-2AM PKT" class="h-4 w-4 text-blue-600 border-gray-300 rounded"><label for="time_window_3" class="ml-2 text-sm text-gray-700">9 PM - 2 AM PKT</label></div><p class="text-xs text-gray-500 mt-2">Note: Part-time (4 hours daily) should select any two or one window; full-time (6-8+ hours daily) can select all three or any combination.</p></div></div></div>
+                                <div class="form-section" data-field="q8_qualification"><h5 class="font-semibold text-gray-700 mb-3">Q8. What is your highest qualification?</h5><select id="q8_qualification" class="form-select w-full p-2 border border-gray-300 rounded-lg"><option value="" selected disabled>Select your highest qualification</option><option value="Matric (10th)">Matric (10th)</option><option value="Intermediate (12th)">Intermediate (12th)</option><option value="B.A / BSc (14 years)">B.A / BSc (14 years)</option><option value="M.A / MSc / BS (16 years)">M.A / MSc / BS (16 years)</option></select></div>
+                                <div class="form-section" data-field="q9_confidentiality"><h5 class="font-semibold text-gray-700 mb-3">Q9. Are you sure that you can manage confidential data and information of our foreign valuable clients and do not share it anywhere else?</h5><select id="q9_confidentiality" class="form-select w-full p-2 border border-gray-300 rounded-lg"><option value="" selected disabled>Select option</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+                                <div class="form-section" data-field="q10_typing_speed"><h5 class="font-semibold text-gray-700 mb-3">Q10. Do you have a typing speed of at least 20 words per minute?</h5><select id="q10_typing_speed" class="form-select w-full p-2 border border-gray-300 rounded-lg"><option value="" selected disabled>Select option</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+                                <div class="d-grid mt-6">
+                                    <button type="submit" id="submitButton" class="w-full bg-indigo-600 text-white py-3 rounded-full font-bold text-lg hover:bg-indigo-700 transition duration-300 shadow-lg">Submit and See Results</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `,
+            candidate: `
+                <div class="max-w-6xl mx-auto dashboard-content">
+                    <h2 class="text-3xl font-bold text-stone-800 mb-4">📝 Candidate Dashboard</h2>
+                    <p class="text-green-600 font-semibold mb-6">Status: Evaluation Approved - Ready to Apply</p>
+
+                    <div class="bg-stone-100 p-6 rounded-lg shadow-sm mb-8">
+                        <h3 class="text-xl font-bold text-amber-700 mb-4">Available Job Positions</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Full Time Job -->
+                            <div class="border border-stone-300 p-6 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h4 class="text-lg font-semibold">Data Entry Specialist - Full Time</h4>
+                                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Full Time</span>
+                                </div>
+                                <p class="text-sm text-stone-600 mb-4">Work 6-8 hours daily with stable monthly income. Ideal for candidates seeking long-term employment.</p>
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-stone-500">Hourly Rate:</span>
+                                        <span class="font-semibold">Rs. 125/hr</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-stone-500">Weekly Hours:</span>
+                                        <span class="font-semibold">40-48 hours</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-stone-500">Project:</span>
+                                        <span class="font-semibold">UK/USA Clients</span>
+                                    </div>
+                                </div>
+                                <button data-job-type="full-time" class="w-full bg-amber-500 text-white py-2 rounded-lg font-semibold hover:bg-amber-600 transition apply-job-btn">
+                                    Apply for Full Time Position
+                                </button>
+                            </div>
+                            
+                            <!-- Part Time Job -->
+                            <div class="border border-stone-300 p-6 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h4 class="text-lg font-semibold">Data Entry Assistant - Part Time</h4>
+                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Part Time</span>
+                                </div>
+                                <p class="text-sm text-stone-600 mb-4">Flexible 4 hours daily schedule. Perfect for students, homemakers, or those with other commitments.</p>
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-stone-500">Hourly Rate:</span>
+                                        <span class="font-semibold">Rs. 110/hr</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-stone-500">Weekly Hours:</span>
+                                        <span class="font-semibold">20-28 hours</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-stone-500">Project:</span>
+                                        <span class="font-semibold">Local & International</span>
+                                    </div>
+                                </div>
+                                <button data-job-type="part-time" class="w-full bg-amber-500 text-white py-2 rounded-lg font-semibold hover:bg-amber-600 transition apply-job-btn">
+                                    Apply for Part Time Position
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Application Status -->
+                    <div id="application-status" class="hidden bg-blue-50 border-l-4 border-blue-600 p-4 rounded-lg shadow-sm mb-6">
+                        <h3 class="font-bold text-lg text-blue-800 mb-1">Application Status</h3>
+                        <p class="text-sm text-blue-700">Your application is currently under review. Our team will process it within 24-48 business hours.</p>
+                        <div class="mt-2 text-xs text-blue-600">
+                            <p>Application ID: <span id="application-id" class="font-mono">WH-APP-001</span></p>
+                            <p>Submitted: <span id="application-date">Just now</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Job Application Form (Initially Hidden) -->
+                    <div id="job-application-form" class="hidden bg-white p-6 rounded-xl shadow-md border border-stone-200">
+                        <!-- Step Indicator -->
+                        <div class="step-indicator">
+                            <div class="step active" data-step="1">
+                                <div class="step-number">1</div>
+                                <div class="step-label">Personal Info</div>
+                            </div>
+                            <div class="step" data-step="2">
+                                <div class="step-number">2</div>
+                                <div class="step-label">KYC & Documents</div>
+                            </div>
+                            <div class="step" data-step="3">
+                                <div class="step-number">3</div>
+                                <div class="step-label">Contract & Signature</div>
+                            </div>
+                        </div>
+
+                        <form id="applicationForm">
+                            <!-- Step 1: Personal Information -->
+                            <div class="application-step active" id="step-1">
+                                <h3 class="text-xl font-bold text-stone-800 mb-4">Personal Information</h3>
+                                <p class="text-sm text-stone-600 mb-6">Please review and complete your personal details.</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-stone-700 mb-1">Full Name *</label>
+                                        <input type="text" id="app-full-name" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Your full name">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-stone-700 mb-1">Email Address *</label>
+                                        <input type="email" id="app-email" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="your@gmail.com">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-stone-700 mb-1">Mobile Number *</label>
+                                        <div class="flex gap-2">
+                                            <select id="app-country-code" class="w-24 px-3 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 bg-stone-100">
+                                                <option value="+92" selected>+92 (PK)</option>
+                                            </select>
+                                            <input type="tel" id="app-mobile" required class="flex-1 px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="300 1234567">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-stone-700 mb-1">Date of Birth *</label>
+                                        <input type="date" id="app-dob" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-stone-700 mb-1">City *</label>
+                                        <input type="text" id="app-city" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Your city">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-stone-700 mb-1">Province *</label>
+                                        <select id="app-province" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
+                                            <option value="">Select Province</option>
+                                            <option value="Punjab">Punjab</option>
+                                            <option value="Sindh">Sindh</option>
+                                            <option value="KPK">Khyber Pakhtunkhwa</option>
+                                            <option value="Balochistan">Balochistan</option>
+                                            <option value="Gilgit-Baltistan">Gilgit-Baltistan</option>
+                                            <option value="Azad Kashmir">Azad Kashmir</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-stone-700 mb-1">Country *</label>
+                                        <input type="text" id="app-country" required value="Pakistan" readonly class="w-full px-4 py-2 border border-stone-300 rounded-lg bg-stone-100">
+                                    </div>
+                                </div>
+
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-stone-700 mb-1">Complete Address *</label>
+                                    <textarea id="app-address" required rows="3" class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="House #, Street, Area, City"></textarea>
+                                </div>
+
+                                <div class="flex justify-end">
+                                    <button type="button" class="bg-amber-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-amber-700 transition next-step" data-next="2">
+                                        Next: KYC & Documents
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: KYC & Documents -->
+                            <div class="application-step" id="step-2">
+                                <h3 class="text-xl font-bold text-stone-800 mb-4">KYC & Document Verification</h3>
+                                <p class="text-sm text-stone-600 mb-6">Please upload the required documents for identity verification.</p>
+                                
+                                <!-- CNIC Upload -->
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-stone-700 mb-2">CNIC (National Identity Card) *</label>
+                                    <p class="text-xs text-stone-500 mb-3">Upload clear images of both front and back sides of your CNIC</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="file-upload-area" id="cnic-front-area">
+                                            <div class="upload-icon">📷</div>
+                                            <p class="text-sm font-medium text-stone-700">CNIC Front Side</p>
+                                            <p class="text-xs text-stone-500 mt-1">JPG, PNG or PDF (Max 5MB)</p>
+                                            <input type="file" id="cnic-front" accept=".jpg,.jpeg,.png,.pdf" class="hidden">
+                                            <button type="button" class="mt-2 bg-stone-200 text-stone-700 py-1 px-3 rounded text-sm hover:bg-stone-300 transition upload-trigger" data-for="cnic-front">
+                                                Choose File
+                                            </button>
+                                            <p id="cnic-front-name" class="text-xs text-green-600 mt-2 hidden"></p>
+                                        </div>
+                                        <div class="file-upload-area" id="cnic-back-area">
+                                            <div class="upload-icon">📷</div>
+                                            <p class="text-sm font-medium text-stone-700">CNIC Back Side</p>
+                                            <p class="text-xs text-stone-500 mt-1">JPG, PNG or PDF (Max 5MB)</p>
+                                            <input type="file" id="cnic-back" accept=".jpg,.jpeg,.png,.pdf" class="hidden">
+                                            <button type="button" class="mt-2 bg-stone-200 text-stone-700 py-1 px-3 rounded text-sm hover:bg-stone-300 transition upload-trigger" data-for="cnic-back">
+                                                Choose File
+                                            </button>
+                                            <p id="cnic-back-name" class="text-xs text-green-600 mt-2 hidden"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Utility Bill Upload -->
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-stone-700 mb-2">Recent Utility Bill *</label>
+                                    <p class="text-xs text-stone-500 mb-3">Upload a recent utility bill (electricity, gas, or water) showing your current address</p>
+                                    <div class="file-upload-area" id="utility-bill-area">
+                                        <div class="upload-icon">📄</div>
+                                        <p class="text-sm font-medium text-stone-700">Utility Bill Document</p>
+                                        <p class="text-xs text-stone-500 mt-1">JPG, PNG or PDF (Max 5MB)</p>
+                                        <input type="file" id="utility-bill" accept=".jpg,.jpeg,.png,.pdf" class="hidden">
+                                        <button type="button" class="mt-2 bg-stone-200 text-stone-700 py-1 px-3 rounded text-sm hover:bg-stone-300 transition upload-trigger" data-for="utility-bill">
+                                            Choose File
+                                        </button>
+                                        <p id="utility-bill-name" class="text-xs text-green-600 mt-2 hidden"></p>
+                                    </div>
+                                </div>
+
+                                <!-- Live Selfie Verification -->
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-stone-700 mb-2">Live Selfie Verification *</label>
+                                    <p class="text-xs text-stone-500 mb-3">Take a live selfie for identity verification</p>
+                                    <div class="webcam-container">
+                                        <video id="webcam-video" autoplay playsinline></video>
+                                        <canvas id="webcam-canvas" class="hidden"></canvas>
+                                        <div class="webcam-controls">
+                                            <button type="button" id="start-camera" class="bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                                                Start Camera
+                                            </button>
+                                            <button type="button" id="capture-selfie" class="bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-green-700 transition hidden">
+                                                Capture Selfie
+                                            </button>
+                                            <button type="button" id="retake-selfie" class="bg-amber-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-amber-700 transition hidden">
+                                                Retake
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="selfie-preview" class="hidden mt-4 text-center">
+                                        <p class="text-sm text-green-600 font-medium">✓ Selfie captured successfully</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between">
+                                    <button type="button" class="bg-stone-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-stone-600 transition prev-step" data-prev="1">
+                                        Back
+                                    </button>
+                                    <button type="button" class="bg-amber-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-amber-700 transition next-step" data-next="3">
+                                        Next: Contract & Signature
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Contract & Signature -->
+                            <div class="application-step" id="step-3">
+                                <h3 class="text-xl font-bold text-stone-800 mb-4">Employment Contract & Signature</h3>
+                                <p class="text-sm text-stone-600 mb-6">Please review and agree to the employment contract terms.</p>
+                                
+                                <!-- Contract Agreement -->
+                                <div class="mb-6 p-4 bg-stone-100 rounded-lg border border-stone-300">
+                                    <h4 class="font-bold text-stone-800 mb-3">WorkHub Employment Contract</h4>
+                                    <div class="text-sm text-stone-700 space-y-2 max-h-60 overflow-y-auto mb-4">
+                                        <p><strong>1. Employment Terms:</strong> This is a remote work agreement between WorkHub and the employee.</p>
+                                        <p><strong>2. Working Hours:</strong> Full-time: 6-8 hours daily, Part-time: 4 hours daily as per selected position.</p>
+                                        <p><strong>3. Compensation:</strong> Payment will be made weekly based on verified working hours.</p>
+                                        <p><strong>4. Confidentiality:</strong> Employee agrees to maintain strict confidentiality of all client data.</p>
+                                        <p><strong>5. Monitoring:</strong> Work activity may be monitored for quality assurance and security purposes.</p>
+                                        <p><strong>6. Termination:</strong> Either party may terminate this agreement with 7 days notice.</p>
+                                        <p><strong>7. Security Fund:</strong> A Rs. 1000 security fund will be deducted from the first salary payment.</p>
+                                    </div>
+                                    <div class="flex items-start space-x-2">
+                                        <input type="checkbox" id="contract-agree" required class="mt-1 h-4 w-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500">
+                                        <label for="contract-agree" class="text-sm text-stone-700">
+                                            I have read, understood, and agree to all terms and conditions of the Employment Contract.
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Signature Requirements -->
+                                <div class="mb-6" id="signature-requirements">
+                                    <h4 class="font-bold text-stone-800 mb-3">Signature Requirements</h4>
+                                    <div class="text-sm text-stone-700 space-y-2">
+                                        <p id="standard-signature" class="bg-blue-50 p-3 rounded border border-blue-200">
+                                            <strong>Standard Signature:</strong> Please print the signature page, sign it, and upload a clear photo.
+                                        </p>
+                                        <div id="minor-signature" class="hidden bg-yellow-50 p-3 rounded border border-yellow-200">
+                                            <strong>Minor Applicant (Under 18):</strong> Both your signature and your father/guardian's signature are required.
+                                        </div>
+                                        <div id="senior-signature" class="hidden bg-green-50 p-3 rounded border border-green-200">
+                                            <strong>Senior Citizen (61+):</strong> Your signature along with physician and caretaker signatures (if applicable).
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Signature Upload -->
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-stone-700 mb-2">Upload Signed Contract *</label>
+                                    <p class="text-xs text-stone-500 mb-3">Print, sign, and upload the signed contract page</p>
+                                    <div class="file-upload-area" id="signature-area">
+                                        <div class="upload-icon">✍️</div>
+                                        <p class="text-sm font-medium text-stone-700">Signed Contract Page</p>
+                                        <p class="text-xs text-stone-500 mt-1">JPG, PNG or PDF (Max 5MB)</p>
+                                        <input type="file" id="signed-contract" accept=".jpg,.jpeg,.png,.pdf" class="hidden">
+                                        <button type="button" class="mt-2 bg-stone-200 text-stone-700 py-1 px-3 rounded text-sm hover:bg-stone-300 transition upload-trigger" data-for="signed-contract">
+                                            Choose File
+                                        </button>
+                                        <p id="signed-contract-name" class="text-xs text-green-600 mt-2 hidden"></p>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between">
+                                    <button type="button" class="bg-stone-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-stone-600 transition prev-step" data-prev="2">
+                                        Back
+                                    </button>
+                                    <button type="submit" id="submit-application" class="bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700 transition">
+                                        Submit Application
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `,
+            new_employee: `
+                <div class="max-w-2xl mx-auto dashboard-content">
+                    <h2 class="text-3xl font-bold text-stone-800 mb-4">🧑‍💻 New Employee Dashboard</h2>
+                    <p class="text-blue-600 font-semibold mb-6">Status: Onboarding - Mandatory Training</p>
+                    
+                    <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-lg shadow-sm mb-6">
+                        <h3 class="font-bold text-lg text-red-800 mb-1">Important Financial Notice</h3>
+                        <p class="text-sm text-red-700">A **Rs. 1000 Security Fund** will be deducted from your first weekly salary payment (See Contract/Policies for details).</p>
+                    </div>
+                    
+                    <div class="bg-stone-100 p-6 rounded-lg space-y-4">
+                        <h4 class="text-xl font-semibold text-stone-700">Mandatory Training Module (3/3 Complete)</h4>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                <span>1. RDP & SOPs Training Video</span>
+                                <span class="text-green-600 font-medium">Completed ✅</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                <span>2. Monitoring Agent & Privacy Quiz</span>
+                                <span class="text-green-600 font-medium">Completed ✅</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                <span>3. Data Security & Confidentiality Test</span>
+                                <span class="text-green-600 font-medium">Completed ✅</span>
+                            </li>
+                        </ul>
+                        <button class="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition opacity-50 cursor-not-allowed" disabled>Training Complete - Awaiting First Payroll</button>
+                        <p class="text-center text-xs text-stone-500">You will be automatically promoted to **Employee** role upon successful receipt of your first weekly salary.</p>
+                    </div>
+                </div>
+            `,
+            employee: `
+                <div class="dashboard-content">
+                    <div class="flex flex-wrap justify-between items-center mb-6 border-b pb-2 gap-4">
+                        <h2 class="text-3xl font-bold text-stone-800">🏆 Employee Dashboard</h2>
+                        <span class="text-green-600 font-semibold bg-green-100 px-3 py-1 rounded-full text-sm">Active Profile</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="lg:col-span-2 bg-amber-50 p-6 rounded-xl shadow-md border-l-4 border-amber-600">
+                            <h3 class="text-xl font-bold text-amber-700 mb-4">Time & Activity Monitor</h3>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-stone-600 text-sm">Real-time Billable Time</p>
+                                    <p class="text-5xl font-extrabold text-amber-800 mt-1">03:45:22</p>
+                                    <p class="text-xs text-red-500 mt-1">Timer Status: Active (Will PAUSE after 40s of inactivity)</p>
+                                </div>
+                                <button class="bg-stone-800 text-white py-3 px-6 rounded-lg font-semibold hover:bg-stone-900 transition">
+                                    Launch Secure RDP
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-stone-800 text-white p-6 rounded-xl shadow-md">
+                            <h3 class="text-lg font-bold mb-3">Earnings Summary (Today)</h3>
+                            <p class="text-4xl font-extrabold">Rs. 468.75</p>
+                            <p class="text-sm mt-2 text-stone-300">Yesterday's Earning: Rs. 875.00</p>
+                            <p class="text-xs mt-2 text-yellow-400">Streak Status: 14/28 Days Completed</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div class="bg-stone-100 p-5 rounded-xl shadow-inner md:col-span-2">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">📈 Performance Analytics</h4>
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">💾 Weekly Upload Module</h4>
+                            <p class="text-sm text-stone-600 mb-3">Deadline: **Sunday 11:59 PM PKT**.</p>
+                            <input type="file" class="text-xs w-full mb-3 p-1 border rounded-lg">
+                            <button class="w-full bg-amber-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-amber-700 transition">
+                                Upload Recorded Session
+                            </button>
+                            <p class="text-xs text-red-500 mt-2">Payroll is dependent on this upload.</p>
+                        </div>
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">🗓️ Leave Request System</h4>
+                            <select class="w-full px-3 py-2 border rounded-lg text-sm mb-3">
+                                <option>Select Leave Type</option>
+                                <option>Short Leave (12-5hr notice)</option>
+                                <option>One Day Leave (12+hr notice)</option>
+                                <option>Long Leave (2-7 days)</option>
+                            </select>
+                            <input type="date" class="w-full px-3 py-2 border rounded-lg text-sm mb-3">
+                            <button class="w-full bg-stone-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-stone-600 transition">
+                                Submit Request
+                            </button>
+                            <p class="text-xs text-stone-500 mt-2">All leaves are without pay.</p>
+                        </div>
+                    </div>
+                </div>
+            `,
+            manager: `
+                <div class="dashboard-content">
+                    <div class="flex flex-wrap justify-between items-center mb-6 border-b pb-2 gap-4">
+                        <h2 class="text-3xl font-bold text-stone-800">👨‍💼 Manager Dashboard</h2>
+                        <span class="text-blue-600 font-semibold bg-blue-100 px-3 py-1 rounded-full text-sm">Team Management</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="lg:col-span-2 bg-blue-50 p-6 rounded-xl shadow-md border-l-4 border-blue-600">
+                            <h3 class="text-xl font-bold text-blue-700 mb-4">Team Performance Overview</h3>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-stone-600 text-sm">Active Team Members</p>
+                                    <p class="text-5xl font-extrabold text-blue-800 mt-1">24</p>
+                                    <p class="text-xs text-blue-500 mt-1">Productivity: 92% | Issues: 3</p>
+                                </div>
+                                <button class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition">
+                                    View Team Details
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-stone-800 text-white p-6 rounded-xl shadow-md">
+                            <h3 class="text-lg font-bold mb-3">Weekly Team Metrics</h3>
+                            <p class="text-4xl font-extrabold">Rs. 42,580</p>
+                            <p class="text-sm mt-2 text-stone-300">Team Weekly Earnings</p>
+                            <p class="text-xs mt-2 text-yellow-400">Productivity Target: 95% (Currently 92%)</p>
+                        </div>
+                    </div>
+
+                    <!-- Application Notifications -->
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 mb-8">
+                        <h3 class="text-xl font-bold text-stone-800 mb-4">📋 Pending Applications</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                <p class="text-sm font-medium text-amber-800">New Applications</p>
+                                <p class="text-2xl font-bold text-amber-600">12</p>
+                                <p class="text-xs text-amber-600">This Week</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <p class="text-sm font-medium text-blue-800">Under Review</p>
+                                <p class="text-2xl font-bold text-blue-600">8</p>
+                                <p class="text-xs text-blue-600">Pending Approval</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <p class="text-sm font-medium text-green-800">Approved</p>
+                                <p class="text-2xl font-bold text-green-600">24</p>
+                                <p class="text-xs text-green-600">This Month</p>
+                            </div>
+                        </div>
+                        <button class="w-full bg-amber-600 text-white py-2 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            Review All Applications
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div class="bg-stone-100 p-5 rounded-xl shadow-inner md:col-span-2">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">📊 Team Performance Analytics</h4>
+                            <canvas id="teamPerformanceChart"></canvas>
+                        </div>
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">👥 Employee Management</h4>
+                            <div class="space-y-3">
+                                <button class="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                                    View All Employees
+                                </button>
+                                <button class="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
+                                    Performance Reviews
+                                </button>
+                                <button class="w-full bg-amber-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-amber-700 transition">
+                                    Issue Warnings
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">📋 Approval Queue</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                    <span>Leave Requests</span>
+                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">5 pending</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                    <span>Payroll Adjustments</span>
+                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">3 pending</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                    <span>New Applications</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">12 pending</span>
+                                </div>
+                            </div>
+                            <button class="w-full bg-stone-500 text-white py-2 rounded-lg text-sm font-semibold hover:bg-stone-600 transition mt-4">
+                                Review All Pending
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            ceo: `
+                <div class="dashboard-content">
+                    <div class="flex flex-wrap justify-between items-center mb-6 border-b pb-2 gap-4">
+                        <h2 class="text-3xl font-bold text-stone-800">👑 CEO Dashboard</h2>
+                        <span class="text-purple-600 font-semibold bg-purple-100 px-3 py-1 rounded-full text-sm">Executive Overview</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-purple-50 p-6 rounded-xl shadow-md border-l-4 border-purple-600">
+                            <h3 class="text-lg font-bold text-purple-700 mb-2">Total Employees</h3>
+                            <p class="text-4xl font-extrabold text-purple-800">187</p>
+                            <p class="text-xs text-purple-600 mt-1">Active: 162 | Inactive: 25</p>
+                        </div>
+                        <div class="bg-green-50 p-6 rounded-xl shadow-md border-l-4 border-green-600">
+                            <h3 class="text-lg font-bold text-green-700 mb-2">Monthly Revenue</h3>
+                            <p class="text-4xl font-extrabold text-green-800">$42.5K</p>
+                            <p class="text-xs text-green-600 mt-1">+12.5% from last month</p>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-xl shadow-md border-l-4 border-blue-600">
+                            <h3 class="text-lg font-bold text-blue-700 mb-2">Active Projects</h3>
+                            <p class="text-4xl font-extrabold text-blue-800">14</p>
+                            <p class="text-xs text-blue-600 mt-1">On track: 11 | At risk: 3</p>
+                        </div>
+                        <div class="bg-amber-50 p-6 rounded-xl shadow-md border-l-4 border-amber-600">
+                            <h3 class="text-lg font-bold text-amber-700 mb-2">Client Satisfaction</h3>
+                            <p class="text-4xl font-extrabold text-amber-800">94%</p>
+                            <p class="text-xs text-amber-600 mt-1">+3% from last quarter</p>
+                        </div>
+                    </div>
+
+                    <!-- Application Statistics -->
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-stone-200 mb-8">
+                        <h3 class="text-xl font-bold text-stone-800 mb-4">📊 Application Statistics</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                <p class="text-sm font-medium text-amber-800">Total Applications</p>
+                                <p class="text-2xl font-bold text-amber-600">156</p>
+                                <p class="text-xs text-amber-600">This Month</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <p class="text-sm font-medium text-blue-800">Pending Review</p>
+                                <p class="text-2xl font-bold text-blue-600">23</p>
+                                <p class="text-xs text-blue-600">Require Attention</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <p class="text-sm font-medium text-green-800">Approved</p>
+                                <p class="text-2xl font-bold text-green-600">45</p>
+                                <p class="text-xs text-green-600">This Month</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                <p class="text-sm font-medium text-red-800">Rejected</p>
+                                <p class="text-2xl font-bold text-red-600">12</p>
+                                <p class="text-xs text-red-600">This Month</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition">
+                                View All Applications
+                            </button>
+                            <button class="flex-1 bg-amber-600 text-white py-2 rounded-lg font-semibold hover:bg-amber-700 transition">
+                                Generate Reports
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">📈 Company Performance</h4>
+                            <canvas id="companyPerformanceChart"></canvas>
+                        </div>
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">📊 Department Metrics</h4>
+                            <canvas id="departmentChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">🚀 Strategic Actions</h4>
+                            <div class="space-y-3">
+                                <button class="w-full bg-purple-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 transition">
+                                    Financial Reports
+                                </button>
+                                <button class="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                                    HR Analytics
+                                </button>
+                                <button class="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
+                                    Business Strategy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">📋 Executive Reports</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                    <span>Q3 Financials</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Ready</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                    <span>HR Compliance</span>
+                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Review</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                                    <span>Client Portfolio</span>
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Updated</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-stone-100 p-5 rounded-xl shadow-inner">
+                            <h4 class="font-bold text-lg text-stone-800 mb-3">🔔 Notifications</h4>
+                            <div class="space-y-3">
+                                <div class="bg-white p-3 rounded-lg shadow-sm">
+                                    <p class="text-sm font-medium">12 new applications received</p>
+                                    <p class="text-xs text-stone-500">2 hours ago</p>
+                                </div>
+                                <div class="bg-white p-3 rounded-lg shadow-sm">
+                                    <p class="text-sm font-medium">3 applications pending approval</p>
+                                    <p class="text-xs text-stone-500">4 hours ago</p>
+                                </div>
+                                <div class="bg-white p-3 rounded-lg shadow-sm">
+                                    <p class="text-sm font-medium">Monthly review meeting</p>
+                                    <p class="text-xs text-stone-500">Tomorrow 10:00 AM</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+        
+        // --- LEGAL CONTENT & MODALS ---
+        const termsContent = `<h5 class="font-bold text-stone-800 mb-2">Terms & Conditions Summary</h5><p><strong>1. Account:</strong> Use of platform is conditional on account approval. **Minimum age 16.** Under 18 requires parental consent.</p><p><strong>2. Conduct:</strong> Professional behavior is required. Use of unauthorized software is prohibited.</p><p><strong>3. Payments:</strong> Hourly rates are subject to change. Payments processed weekly.</p><p><strong>4. Termination:</strong> Account can be terminated immediately for contract breach or security violation.</p><p class="pt-2 text-xs text-stone-500">View full T&C document for complete details at ${WEBSITE_URL}.</p>`;
+        const privacyContent = `<h5 class="font-bold text-stone-800 mb-2">Privacy Policy Summary</h5><p><strong>1. Data Collected:</strong> Name, Email, Contact Info, Payment Details, and Work Activity Data (including screenshots/keystrokes during work).</p><p><strong>2. Age Requirement:</strong> The Service is intended for users **aged 16 and above**. Users under 18 must have parental/guardian consent.</p><p><strong>3. Use of Data:</strong> Used strictly for payment processing, performance evaluation, and security compliance.</p><p><strong>4. Sharing:</strong> Data is not sold. Shared only with necessary third parties (e.g., payment processors).</p><p><strong>5. Security:</strong> Data is stored securely with restricted access.</p><p class="pt-2 text-xs text-stone-500">View full Privacy Policy document for complete details at ${WEBSITE_URL}.</p>`;
+        const fullLegalContent = { 
+            'full-terms': `<h2>Terms & Conditions</h2><p class="text-sm text-stone-500 mb-4">Effective Date: ${EFFECTIVE_DATE}</p>
+                <h3>1. Acceptance of Terms</h3>
+                <p>By accessing and using the WorkHub Platform ("Platform"), you accept and agree to be bound by the terms and provision of this agreement.</p>
+                
+                <h3>2. Use License</h3>
+                <p>Permission is granted to temporarily use the Platform for remote data entry work. This is the grant of a license, not a transfer of title.</p>
+                
+                <h3>3. Account Registration</h3>
+                <p>You must provide accurate information during registration. Only @gmail.com emails are accepted. Mobile number verification is mandatory.</p>
+                
+                <h3>4. User Conduct</h3>
+                <p>Users must maintain professional conduct. Any form of harassment, data theft, or platform misuse will result in immediate termination.</p>
+                
+                <h3>5. Payment Terms</h3>
+                <p>Payments are processed weekly. Hourly rates may be revised with 7-day notice. Rs. 1000 security fund deducted from first salary.</p>
+                
+                <h3>6. Termination</h3>
+                <p>We may terminate or suspend access to our Platform immediately, without prior notice, for conduct violating these Terms.</p>
+                
+                <h3>7. Governing Law</h3>
+                <p>These Terms shall be governed by the laws of Pakistan without regard to its conflict of law provisions.</p>`, 
+                
+            'full-privacy': `<h2>Privacy Policy</h2><p class="text-sm text-stone-500 mb-4">Effective Date: ${EFFECTIVE_DATE}</p>
+                <h3>1. Information We Collect</h3>
+                <p><strong>Personal Information:</strong> Name, email, mobile number, location data, and government identification documents.</p>
+                <p><strong>Work Performance Data:</strong> Screen recordings, keystroke logs, activity monitoring data, and productivity metrics.</p>
+                <p><strong>Technical Data:</strong> Device information, IP addresses, browser type, and operating system.</p>
+                
+                <h3>2. How We Use Your Information</h3>
+                <p><strong>Service Provision:</strong> To provide and maintain our remote work platform and process payments.</p>
+                <p><strong>Quality Assurance:</strong> To monitor work quality and ensure compliance with client requirements.</p>
+                <p><strong>Security:</strong> To prevent fraud and ensure platform security through activity monitoring.</p>
+                <p><strong>Communication:</strong> To send important updates about your account and work assignments.</p>
+                
+                <h3>3. Data Sharing</h3>
+                <p>We do not sell your personal data. We may share information with:</p>
+                <ul class="list-disc ml-5">
+                    <li>Payment processors for salary disbursement</li>
+                    <li>Client organizations for work verification</li>
+                    <li>Legal authorities when required by law</li>
+                </ul>
+                
+                <h3>4. Data Security</h3>
+                <p>We implement industry-standard security measures including encryption, access controls, and regular security audits.</p>
+                
+                <h3>5. Data Retention</h3>
+                <p>We retain personal data for as long as your account is active. Work performance data is retained for 6 months for audit purposes.</p>
+                
+                <h3>6. Your Rights</h3>
+                <p>You have the right to access, correct, or delete your personal data. Contact ${CONTACT_EMAIL} for data-related requests.</p>
+                
+                <h3>7. Monitoring Consent</h3>
+                <p>By using our Platform, you consent to activity monitoring including screen recording and keystroke logging during work sessions.</p>`
+        };
+        
+        window.openModal = function(modalId, title, key) {
+            const modal = document.getElementById(modalId);
+            const body = modal.querySelector('#modal-content-body');
+            if (key && fullLegalContent[key]) {
+                body.innerHTML = fullLegalContent[key];
+            } else if (body) {
+                body.innerHTML = `<h2 class="text-xl font-bold">${title}</h2><p>Full document content would appear here.</p>`;
+            }
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+        
+        // --- FIREBASE & AUTH SETUP ---
+        async function setupFirebase() {
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            if (Object.keys(firebaseConfig).length === 0) return;
+            
+            setLogLevel('debug');
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+            else await signInAnonymously(auth);
+
+            userId = auth.currentUser?.uid || 'anonymous-user';
+            console.log("Firebase initialized. User ID:", userId);
+        }
+
+        // --- AUTHENTICATION FUNCTIONS ---
+
+        // Generate random 6-digit OTP
+        function generateOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // Simulate OTP sending
+        function sendOTP(email, mobile, otpData) {
+            console.log('📧 Email OTP sent to:', email, 'Code:', otpData.email);
+            console.log('📱 SMS OTP sent to:', mobile, 'Code:', otpData.mobile);
+            return true;
+        }
+
+        // Start OTP countdown timer
+        function startCountdown(type, duration = 120) {
+            const countdownElement = document.getElementById(`${type}-countdown`);
+            let timeLeft = duration;
+            
+            const timer = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    countdownElement.textContent = "OTP expired";
+                    countdownElement.className = "text-red-600 font-semibold text-sm";
+                }
+                timeLeft--;
+            }, 1000);
+            
+            otpTimers[type] = timer;
+            return timer;
+        }
+
+        // Setup OTP input functionality
+        function setupOTPInputs() {
+            const otpContainers = document.querySelectorAll('.otp-container');
+            
+            otpContainers.forEach(container => {
+                const inputs = container.querySelectorAll('.otp-input');
+                
+                inputs.forEach((input, index) => {
+                    // Handle input
+                    input.addEventListener('input', (e) => {
+                        const value = e.target.value;
+                        
+                        if (value.length === 1 && index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                        
+                        // Check if all inputs are filled
+                        checkOTPCompletion();
+                    });
+                    
+                    // Handle backspace
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                            inputs[index - 1].focus();
+                        }
+                    });
+                });
+            });
+        }
+
+        // Check if both OTPs are completed
+        function checkOTPCompletion() {
+            const emailInputs = document.querySelectorAll('#email-otp-container .otp-input');
+            const mobileInputs = document.querySelectorAll('#mobile-otp-container .otp-input');
+            const verifyBtn = document.getElementById('verify-otp-btn');
+            
+            const emailComplete = Array.from(emailInputs).every(input => input.value.length === 1);
+            const mobileComplete = Array.from(mobileInputs).every(input => input.value.length === 1);
+            
+            if (emailComplete && mobileComplete) {
+                verifyBtn.disabled = false;
+                verifyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                verifyBtn.disabled = true;
+                verifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Verify OTPs
+        function verifyOTPs() {
+            const emailInputs = document.querySelectorAll('#email-otp-container .otp-input');
+            const mobileInputs = document.querySelectorAll('#mobile-otp-container .otp-input');
+            
+            const enteredEmailOTP = Array.from(emailInputs).map(input => input.value).join('');
+            const enteredMobileOTP = Array.from(mobileInputs).map(input => input.value).join('');
+            
+            if (enteredEmailOTP === currentOTPData.email && enteredMobileOTP === currentOTPData.mobile) {
+                return true;
+            } else {
+                alert('Invalid OTP codes. Please try again.');
+                return false;
+            }
+        }
+
+        // Open OTP verification modal
+        function openOTPModal(userData) {
+            document.getElementById('verify-email').textContent = userData.email;
+            document.getElementById('verify-mobile').textContent = `${userData.countryCode} ${userData.mobileNumber}`;
+            
+            // Clear previous OTP inputs
+            document.querySelectorAll('.otp-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+            
+            // Generate new OTPs
+            currentOTPData = {
+                email: generateOTP(),
+                mobile: generateOTP()
+            };
+            
+            // Send OTPs (simulated)
+            sendOTP(userData.email, `${userData.countryCode}${userData.mobileNumber}`, currentOTPData);
+            
+            // Start countdown timers
+            startCountdown('email');
+            startCountdown('mobile');
+            
+            // Setup OTP input functionality
+            setupOTPInputs();
+            
+            // Show modal
+            const modal = document.getElementById('otp-modal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        }
+
+        // Close OTP modal
+        function closeOTPModal() {
+            const modal = document.getElementById('otp-modal');
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+            
+            // Clear timers
+            Object.values(otpTimers).forEach(timer => {
+                if (timer) clearInterval(timer);
+            });
+        }
+
+        // --- JOB APPLICATION FUNCTIONS ---
+
+        // Setup job application form
+        function setupJobApplication() {
+            // Apply button handlers
+            document.querySelectorAll('.apply-job-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedJobType = this.getAttribute('data-job-type');
+                    document.getElementById('job-application-form').classList.remove('hidden');
+                    document.querySelector('.bg-stone-100').classList.add('hidden');
+                    
+                    // Auto-fill personal information if available
+                    autoFillPersonalInfo();
+                });
+            });
+
+            // Step navigation
+            document.querySelectorAll('.next-step').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const nextStep = this.getAttribute('data-next');
+                    navigateToStep(nextStep);
+                });
+            });
+
+            document.querySelectorAll('.prev-step').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const prevStep = this.getAttribute('data-prev');
+                    navigateToStep(prevStep);
+                });
+            });
+
+            // File upload handlers
+            document.querySelectorAll('.upload-trigger').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-for');
+                    document.getElementById(targetId).click();
+                });
+            });
+
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        const fileName = this.files[0].name;
+                        const displayElement = document.getElementById(`${this.id}-name`);
+                        displayElement.textContent = `✓ ${fileName}`;
+                        displayElement.classList.remove('hidden');
+                    }
+                });
+            });
+
+            // Webcam functionality
+            let stream = null;
+            document.getElementById('start-camera').addEventListener('click', async function() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    const video = document.getElementById('webcam-video');
+                    video.srcObject = stream;
+                    
+                    this.classList.add('hidden');
+                    document.getElementById('capture-selfie').classList.remove('hidden');
+                } catch (err) {
+                    alert('Error accessing camera: ' + err.message);
+                }
+            });
+
+            document.getElementById('capture-selfie').addEventListener('click', function() {
+                const video = document.getElementById('webcam-video');
+                const canvas = document.getElementById('webcam-canvas');
+                const context = canvas.getContext('2d');
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Stop camera
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                this.classList.add('hidden');
+                document.getElementById('retake-selfie').classList.remove('hidden');
+                document.getElementById('selfie-preview').classList.remove('hidden');
+            });
+
+            document.getElementById('retake-selfie').addEventListener('click', function() {
+                document.getElementById('selfie-preview').classList.add('hidden');
+                this.classList.add('hidden');
+                document.getElementById('start-camera').classList.remove('hidden');
+                
+                const video = document.getElementById('webcam-video');
+                video.srcObject = null;
+            });
+
+            // Form submission
+            document.getElementById('applicationForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitApplication();
+            });
+
+            // Age-based signature requirements
+            document.getElementById('app-dob').addEventListener('change', function() {
+                updateSignatureRequirements();
+            });
+        }
+
+        // Auto-fill personal information
+        function autoFillPersonalInfo() {
+            // In a real application, this would fetch data from user profile
+            const userData = {
+                fullName: "John Doe",
+                email: "john.doe@gmail.com",
+                mobile: "3001234567",
+                city: "Lahore",
+                province: "Punjab",
+                address: "House 123, Street 45, Model Town"
+            };
+
+            document.getElementById('app-full-name').value = userData.fullName;
+            document.getElementById('app-email').value = userData.email;
+            document.getElementById('app-mobile').value = userData.mobile;
+            document.getElementById('app-city').value = userData.city;
+            document.getElementById('app-province').value = userData.province;
+            document.getElementById('app-address').value = userData.address;
+        }
+
+        // Navigate between application steps
+        function navigateToStep(stepNumber) {
+            // Hide all steps
+            document.querySelectorAll('.application-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Show target step
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+            
+            // Update step indicators
+            document.querySelectorAll('.step').forEach(step => {
+                const stepNum = parseInt(step.getAttribute('data-step'));
+                step.classList.remove('active', 'completed');
+                
+                if (stepNum < stepNumber) {
+                    step.classList.add('completed');
+                } else if (stepNum == stepNumber) {
+                    step.classList.add('active');
+                }
+            });
+        }
+
+        // Update signature requirements based on age
+        function updateSignatureRequirements() {
+            const dob = new Date(document.getElementById('app-dob').value);
+            const today = new Date();
+            const age = today.getFullYear() - dob.getFullYear();
+            
+            document.getElementById('standard-signature').classList.remove('hidden');
+            document.getElementById('minor-signature').classList.add('hidden');
+            document.getElementById('senior-signature').classList.add('hidden');
+            
+            if (age < 18) {
+                document.getElementById('standard-signature').classList.add('hidden');
+                document.getElementById('minor-signature').classList.remove('hidden');
+            } else if (age >= 61) {
+                document.getElementById('standard-signature').classList.add('hidden');
+                document.getElementById('senior-signature').classList.remove('hidden');
+            }
+        }
+
+        // Submit job application
+        function submitApplication() {
+            // Validate required files
+            const requiredFiles = ['cnic-front', 'cnic-back', 'utility-bill', 'signed-contract'];
+            const missingFiles = requiredFiles.filter(fileId => !document.getElementById(fileId).files.length);
+            
+            if (missingFiles.length > 0) {
+                alert('Please upload all required documents before submitting.');
+                return;
+            }
+
+            // Validate contract agreement
+            if (!document.getElementById('contract-agree').checked) {
+                alert('Please agree to the employment contract terms.');
+                return;
+            }
+
+            // Create application data
+            const applicationData = {
+                jobType: selectedJobType,
+                personalInfo: {
+                    fullName: document.getElementById('app-full-name').value,
+                    email: document.getElementById('app-email').value,
+                    mobile: document.getElementById('app-mobile').value,
+                    countryCode: document.getElementById('app-country-code').value,
+                    dob: document.getElementById('app-dob').value,
+                    city: document.getElementById('app-city').value,
+                    province: document.getElementById('app-province').value,
+                    country: document.getElementById('app-country').value,
+                    address: document.getElementById('app-address').value
+                },
+                timestamp: new Date().toISOString(),
+                status: 'under_review'
+            };
+
+            // Save application (in a real app, this would upload to server)
+            currentApplicationData = applicationData;
+            
+            // Show success message and status
+            document.getElementById('job-application-form').classList.add('hidden');
+            document.getElementById('application-status').classList.remove('hidden');
+            
+            // Generate application ID
+            const appId = 'WH-APP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            document.getElementById('application-id').textContent = appId;
+            document.getElementById('application-date').textContent = new Date().toLocaleString();
+            
+            // Notify managers/CEO (simulated)
+            notifyManagersAndCEO(applicationData, appId);
+            
+            alert('Application submitted successfully! Our team will review it within 24-48 business hours.');
+        }
+
+        // Notify managers and CEO about new application
+        function notifyManagersAndCEO(applicationData, appId) {
+            console.log(`📋 New application received: ${appId}`);
+            console.log(`Applicant: ${applicationData.personalInfo.fullName}`);
+            console.log(`Position: ${applicationData.jobType}`);
+            console.log(`Submitted: ${applicationData.timestamp}`);
+            
+            // In a real application, this would send notifications to managers and CEO
+        }
+
+        // --- SCREEN RENDERING & SETUP ---
+        function renderScreen(screenName) {
+            roleButtons.forEach(btn => btn.classList.remove('active'));
+            const activeButton = document.querySelector(`[data-screen="${screenName}"]`);
+            if (activeButton) activeButton.classList.add('active');
+            
+            screenContainer.innerHTML = screens[screenName];
+
+            if (screenName === 'signup') setupSignUpScreen();
+            else if (screenName === 'visitor') setupVisitorScreen();
+            else if (screenName === 'evaluation') setupEvaluationScreen();
+            else if (screenName === 'candidate') setupCandidateScreen();
+            else if (screenName === 'employee') setupEmployeeScreen();
+            else if (screenName === 'manager') setupManagerScreen();
+            else if (screenName === 'ceo') setupCEOScreen();
+        }
+
+        function setupSignUpScreen() {
+            const authTabs = document.querySelectorAll('.auth-tab');
+            const authForm = document.getElementById('auth-form'); 
+            
+            const renderSignIn = () => { authForm.innerHTML = signInFormHtml; };
+            
+            const renderSignUp = () => {
+                let updatedFormHtml = signInFormHtml.replace(`</div>`, `</div>` + signUpExtraFieldsHtml);
+                const submitButtonRegex = /<button type="submit".*?<\/button>/s;
+                updatedFormHtml = updatedFormHtml.replace(submitButtonRegex, signUpTermsHtml + `
+                    <button type="submit" id="auth-submit-btn" class="w-full bg-amber-600 text-white py-2 rounded-lg font-semibold hover:bg-amber-700 transition opacity-50 cursor-not-allowed" disabled>Create Account</button>
+                `);
+                authForm.innerHTML = updatedFormHtml;
+                const termsCheckbox = document.getElementById('terms-agree');
+                const submitBtn = document.getElementById('auth-submit-btn');
+                if (termsCheckbox && submitBtn) {
+                    termsCheckbox.addEventListener('change', () => {
+                        submitBtn.disabled = !termsCheckbox.checked;
+                        submitBtn.classList.toggle('opacity-50', !termsCheckbox.checked);
+                        submitBtn.classList.toggle('cursor-not-allowed', !termsCheckbox.checked);
+                    });
+                }
+            };
+
+            function showAuthTab(tabName) {
+                authTabs.forEach(tab => tab.classList.remove('border-amber-600', 'text-amber-600'));
+                const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+                if (activeTab) activeTab.classList.add('border-amber-600', 'text-amber-600');
+                if (tabName === 'signup') renderSignUp(); else renderSignIn();
+            }
+
+            authTabs.forEach(tab => tab.addEventListener('click', (e) => showAuthTab(e.target.dataset.tab)));
+            showAuthTab('signin'); 
+        }
+
+        function setupVisitorScreen() {
+            document.getElementById('legal-content').innerHTML = termsContent;
+            document.querySelectorAll('.legal-tab').forEach(tab => tab.addEventListener('click', (e) => {
+                document.getElementById('legal-content').innerHTML = e.target.dataset.tab === 'terms' ? termsContent : privacyContent;
+            }));
+            const agreeCheckbox = document.getElementById('legal-agree');
+            const submitButton = document.getElementById('submit-evaluation');
+            agreeCheckbox.addEventListener('change', () => {
+                submitButton.disabled = !agreeCheckbox.checked;
+                submitButton.classList.toggle('opacity-50', !agreeCheckbox.checked);
+                submitButton.classList.toggle('cursor-not-allowed', !agreeCheckbox.checked);
+            });
+            submitButton.addEventListener('click', () => {
+                if (agreeCheckbox.checked) renderScreen('evaluation');
+            });
+        }
+        
+        function setupCandidateScreen() {
+            setupJobApplication();
+        }
+        
+        function setupEmployeeScreen() {
+            const ctx = document.getElementById('performanceChart');
+            if(!ctx) return;
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'],
+                    datasets: [{
+                        label: 'Your Weekly Output Score',
+                        data: [65, 59, 80, 81, 56, 55, 90],
+                        borderColor: 'rgb(245, 158, 11)',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Top 10% Average',
+                        data: [85, 82, 88, 90, 86, 84, 92],
+                        borderColor: 'rgb(22, 163, 74)',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top', }, title: { display: true, text: 'Weekly Performance vs. Top 10% Average' } },
+                    scales: { y: { beginAtZero: true, suggestedMax: 100 } }
+                }
+            });
+        }
+        
+        function setupManagerScreen() {
+            const teamCtx = document.getElementById('teamPerformanceChart');
+            if(!teamCtx) return;
+            new Chart(teamCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Team A', 'Team B', 'Team C', 'Team D'],
+                    datasets: [{
+                        label: 'Productivity %',
+                        data: [92, 88, 95, 90],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false }, title: { display: true, text: 'Team Productivity' } },
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        }
+        
+        function setupCEOScreen() {
+            const companyCtx = document.getElementById('companyPerformanceChart');
+            if(companyCtx) {
+                new Chart(companyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                        datasets: [{
+                            label: 'Revenue ($)',
+                            data: [32000, 35000, 38000, 37000, 39000, 41000, 40000, 42000, 42500],
+                            borderColor: 'rgb(139, 92, 246)',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'top' } }
+                    }
+                });
+            }
+            
+            const departmentCtx = document.getElementById('departmentChart');
+            if(departmentCtx) {
+                new Chart(departmentCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Data Entry', 'Quality Control', 'Management', 'IT Support'],
+                        datasets: [{
+                            data: [45, 20, 15, 20],
+                            backgroundColor: [
+                                'rgb(245, 158, 11)',
+                                'rgb(16, 185, 129)',
+                                'rgb(59, 130, 246)',
+                                'rgb(139, 92, 246)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+        }
+        
+        function setupEvaluationScreen() {
+            // Fix Q1 dropdown - populate with options programmatically
+            const q1AgeSelect = document.getElementById('q1_age');
+            if (q1AgeSelect) {
+                // Clear existing options except the first one
+                while (q1AgeSelect.options.length > 1) {
+                    q1AgeSelect.remove(1);
+                }
+                
+                // Add age options from 16 to 65
+                for (let i = 16; i <= 65; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    q1AgeSelect.appendChild(option);
+                }
+            }
+            
+            const visitorIdInput = document.getElementById('visitor_real_id');
+            let visitorId = localStorage.getItem('visitor_real_id') || crypto.randomUUID();
+            localStorage.setItem('visitor_real_id', visitorId);
+            visitorIdInput.value = visitorId;
+            const attemptCountInput = document.getElementById('attempt_count');
+            let attemptCount = parseInt(localStorage.getItem('application_attempt_count') || '0', 10) + 1;
+            localStorage.setItem('application_attempt_count', attemptCount);
+            attemptCountInput.value = attemptCount;
+            
+            document.getElementById('q1_age').addEventListener('change', e => {
+                const age = parseInt(e.target.value);
+                document.getElementById('sub_q1_minor').classList.toggle('hidden', age < 16 || age > 17);
+                document.getElementById('sub_q1_senior').classList.toggle('hidden', age < 61);
+            });
+            document.getElementById('q5_stable_internet').addEventListener('change', e => {
+                document.getElementById('sub_q5_internet_details').classList.toggle('hidden', e.target.value !== 'Yes');
+            });
+            document.getElementById('q7_daily_time').addEventListener('change', e => {
+                document.getElementById('sub_q7_time_windows').classList.toggle('hidden', e.target.value !== 'Yes');
+            });
+            document.getElementById('q6_profession').addEventListener('change', e => {
+                document.getElementById('professionContextContainer').classList.toggle('hidden', !e.target.value);
+            });
+            
+            document.getElementById('suggestProcessorBtn').addEventListener('click', () => suggestProcessorDescription(callGeminiApi));
+            document.getElementById('getProfessionContextBtn').addEventListener('click', () => getProfessionContext(callGeminiApi));
+
+            document.getElementById('applicantForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = collectFormData();
+                const eligibilityResult = applyEligibilityLogic(formData);
+                await saveSubmission(formData, eligibilityResult);
+                displayResults(eligibilityResult);
+            });
+        }
+
+        // --- EVALUATION FORM LOGIC ---
+        function collectFormData() {
+            const data = {};
+            const form = document.getElementById('applicantForm');
+            if(!form) return data;
+            const elements = form.querySelectorAll('input, select, textarea');
+            elements.forEach(el => {
+                if (el.type === 'checkbox') {
+                    if (!data[el.name]) data[el.name] = [];
+                    if (el.checked) data[el.name].push(el.value);
+                } else if (el.id) {
+                    data[el.id] = el.value.trim();
+                }
+            });
+            return data;
+        }
+        
+        function applyEligibilityLogic(data) {
+            const reasons = [];
+            let applicationStatus = 'Eligible';
+            const age = parseInt(data.q1_age);
+            if (isNaN(age) || age < 16 || age > 65) { 
+                reasons.push({ field: 'q1_age', text: 'Rejection: Age must be between 16 and 65.' }); 
+                applicationStatus = 'Rejected';
+            }
+            if (age >= 16 && age <= 17 && data.q1b_guardian_agree !== 'Yes') { 
+                reasons.push({ field: 'q1b_guardian_agree', text: 'Rejection: Guardian permission is mandatory for applicants under 18.' }); 
+                applicationStatus = 'Rejected';
+            }
+            if (data.q5_stable_internet !== 'Yes') { 
+                reasons.push({ field: 'q5_stable_internet', text: 'Rejection: A stable internet connection is mandatory.' }); 
+                applicationStatus = 'Rejected';
+            }
+            if (data.q7_daily_time !== 'Yes') { 
+                reasons.push({ field: 'q7_daily_time', text: 'Rejection: Minimum 2-4 hours of daily availability is required.' }); 
+                applicationStatus = 'Rejected';
+            }
+            if (data.q9_confidentiality !== 'Yes') { 
+                reasons.push({ field: 'q9_confidentiality', text: 'Rejection: Commitment to confidentiality is mandatory.' }); 
+                applicationStatus = 'Rejected';
+            }
+            if (data.q10_typing_speed !== 'Yes') { 
+                reasons.push({ field: 'q10_typing_speed', text: 'Rejection: A minimum typing speed of 20 WPM is essential.' }); 
+                applicationStatus = 'Rejected';
+            }
+            const ramMatch = data.q3_ram?.toUpperCase().match(/(\d+)\s*G?B?/);
+            if (!ramMatch || parseInt(ramMatch[1], 10) < 4) { 
+                reasons.push({ field: 'q3_ram', text: 'Rejection: Minimum required RAM is 4GB.' }); 
+                applicationStatus = 'Rejected';
+            }
+            if (applicationStatus !== 'Rejected' && age >= 61) { 
+                applicationStatus = 'Pending'; 
+                reasons.push({ field: 'q1_age', text: 'Pending: Applicant age requires manual approval.' });
+            }
+            return { applicationStatus, reasons };
+        }
+        
+        async function saveSubmission(data, result) {
+            const statusEl = document.getElementById('firestoreStatus');
+            if (!db || !userId) { 
+                if(statusEl) statusEl.textContent = 'Error: Firestore not initialized.'; 
+                return; 
+            }
+            if(statusEl) statusEl.textContent = 'Saving...';
+            const submissionData = { 
+                ...data, 
+                resultStatus: result.applicationStatus, 
+                rejectionReasons: result.reasons.map(r => r.text), 
+                timestamp: serverTimestamp(), 
+                appId, 
+                userId 
+            };
+            const docId = `${localStorage.getItem('visitor_real_id')}-${localStorage.getItem('application_attempt_count')}`;
+            try {
+                await setDoc(doc(db, `/artifacts/${appId}/users/${userId}/submissions`, docId), submissionData);
+                if(statusEl) statusEl.textContent = 'Data saved successfully.';
+            } catch (e) {
+                console.error("Error saving to Firestore:", e);
+                if(statusEl) statusEl.textContent = 'Error saving data.';
+            }
+        }
+        
+        function displayResults(result) {
+            const { applicationStatus, reasons } = result;
+            document.querySelectorAll('.form-section').forEach(el => el.classList.remove('highlight-field'));
+            const modalTitle = document.getElementById('modalTitle');
+            const modalIcon = document.getElementById('modalStatusIcon');
+            const modalMessage = document.getElementById('modalMessage');
+            const reasonsDiv = document.getElementById('rejectionReasons');
+            const reasonsList = document.getElementById('reasonsList');
+            reasonsList.innerHTML = '';
+
+            if (applicationStatus === 'Eligible') {
+                modalTitle.textContent = "Status: Eligible";
+                modalIcon.innerHTML = `<svg class="w-full h-full text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                modalMessage.textContent = "You meet all initial requirements.";
+                reasonsDiv.classList.add('hidden');
+            } else if (applicationStatus === 'Pending') {
+                modalTitle.textContent = "Status: Pending Review";
+                 modalIcon.innerHTML = `<svg class="w-full h-full text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                modalMessage.textContent = "Your application requires manual review.";
+                reasonsDiv.classList.remove('hidden');
+                reasons.forEach(r => reasonsList.innerHTML += `<li>${r.text}</li>`);
+            } else { // Rejected
+                modalTitle.textContent = "Status: Non-Eligible";
+                 modalIcon.innerHTML = `<svg class="w-full h-full text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                modalMessage.textContent = "You did not meet one or more critical requirements.";
+                reasonsDiv.classList.remove('hidden');
+                reasons.forEach(r => {
+                    reasonsList.innerHTML += `<li>${r.text}</li>`;
+                    const fieldEl = document.querySelector(`[data-field="${r.field}"]`);
+                    if (fieldEl) fieldEl.classList.add('highlight-field');
+                });
+            }
+            openModal('resultsModal');
+        }
+        
+        // Gemini API Functions - Fixed Implementation
+        async function callGeminiApi(userQuery, systemPrompt, useGrounding = true) {
+            try {
+                // This is a simulation - in a real implementation, you would call the actual Gemini API
+                console.log("Calling Gemini API with:", { userQuery, systemPrompt, useGrounding });
+                
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Mock responses based on the type of query
+                if (systemPrompt.includes("processor")) {
+                    const deviceType = document.getElementById('q2_device_type').value;
+                    
+                    const deviceSuggestions = {
+                        'Android': 'For Android devices, consider models with Snapdragon 600 series or better, MediaTek Dimensity series, or Exynos processors with at least 6-8 cores for optimal performance.',
+                        'iPhone': 'For iPhones, models with A12 Bionic chip or newer (A13, A14, A15, A16) provide excellent performance for data entry tasks.',
+                        'PC': 'For desktop PCs, Intel Core i3/i5/i7 (8th gen or newer) or AMD Ryzen 3/5/7 processors are recommended with at least 4 cores.',
+                        'Laptop': 'For laptops, Intel Core i3/i5 (8th gen or newer) or AMD Ryzen 3/5 mobile processors with at least 4 cores provide good performance.',
+                        'Tablet': 'For tablets, Apple A-series chips (A12 or newer) or Android tablets with Snapdragon 600/700 series processors work well.',
+                        'Chromebook': 'For Chromebooks, Intel Celeron N-series, MediaTek Kompanio, or Snapdragon 7c series processors are suitable.'
+                    };
+                    
+                    return deviceSuggestions[deviceType] || "Please select your device type first to get a customized processor suggestion.";
+                } else if (systemPrompt.includes("profession")) {
+                    return "As a data entry specialist, you'll need strong attention to detail, good typing speed, and familiarity with common office software. This role requires focus and consistency for extended periods.";
+                }
+                
+                return "This is a sample response from the Gemini API. In a real implementation, this would be the actual AI-generated content.";
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                throw new Error("Failed to get response from AI service");
+            }
+        }
+        
+        async function suggestProcessorDescription(apiCaller) {
+            const deviceType = document.getElementById('q2_device_type').value;
+            const outputDiv = document.getElementById('processorSuggestionOutput');
+            const loadingIndicator = document.getElementById('processorLoadingIndicator');
+            const errorOutput = document.getElementById('processorErrorOutput');
+            
+            if (!deviceType) {
+                errorOutput.querySelector('p').textContent = "Please select your device type first.";
+                errorOutput.classList.remove('hidden');
+                outputDiv.classList.add('hidden');
+                return;
+            }
+            
+            outputDiv.classList.remove('hidden');
+            errorOutput.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicator.textContent = "Getting AI suggestion based on your device type...";
+            
+            try {
+                const systemPrompt = `Provide a concise, helpful suggestion for a processor description suitable for data entry work based on the user's device type: ${deviceType}`;
+                const suggestion = await apiCaller(deviceType, systemPrompt);
+                
+                document.getElementById('suggestionText').textContent = suggestion;
+                loadingIndicator.classList.add('hidden');
+            } catch (error) {
+                errorOutput.querySelector('p').textContent = error.message;
+                errorOutput.classList.remove('hidden');
+                outputDiv.classList.add('hidden');
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+        
+        async function getProfessionContext(apiCaller) {
+            const professionSelect = document.getElementById('q6_profession');
+            const outputDiv = document.getElementById('professionContextOutput');
+            const loadingIndicator = document.getElementById('contextLoadingIndicator');
+            const errorOutput = document.getElementById('contextErrorOutput');
+            
+            if (!professionSelect.value) {
+                errorOutput.querySelector('p').textContent = "Please select a profession first.";
+                errorOutput.classList.remove('hidden');
+                outputDiv.classList.add('hidden');
+                return;
+            }
+            
+            outputDiv.classList.remove('hidden');
+            errorOutput.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicator.textContent = "Getting profession context...";
+            
+            try {
+                const systemPrompt = `Provide context about how someone with the profession "${professionSelect.value}" could excel in data entry work. Focus on transferable skills and mindset.`;
+                const context = await apiCaller(professionSelect.value, systemPrompt);
+                
+                document.getElementById('contextText').textContent = context;
+                loadingIndicator.classList.add('hidden');
+            } catch (error) {
+                errorOutput.querySelector('p').textContent = error.message;
+                errorOutput.classList.remove('hidden');
+                outputDiv.classList.add('hidden');
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFirebase();
+            renderScreen('signup'); 
+            roleButtons.forEach(button => {
+                button.addEventListener('click', (e) => renderScreen(e.currentTarget.dataset.screen));
+            });
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+            });
+
+            // OTP Modal Event Listeners
+            document.getElementById('verify-otp-btn').addEventListener('click', async () => {
+                if (verifyOTPs()) {
+                    alert('OTP verification successful! Account created.');
+                    closeOTPModal();
+                    renderScreen('visitor');
+                }
+            });
+
+            document.getElementById('resend-email-otp').addEventListener('click', () => {
+                alert('Email OTP resent!');
+            });
+
+            document.getElementById('resend-mobile-otp').addEventListener('click', () => {
+                alert('SMS OTP resent!');
+            });
+        });
+    </script>
+</body>
+</html>

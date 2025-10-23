@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMS Role-Based Screens Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dashboard-content { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .role-selector-btn.active { background-color: #f59e0b; color: #ffffff; }
+        
+        /* General Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            background-color: #ffffff; padding: 30px; border-radius: 12px;
+            max-width: 800px; width: 90%; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: scale(0.95); transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible { opacity: 1; }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-content h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #b45309; }
+        .modal-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #44403c; }
+        
+        /* Evaluation Form Specific Styles */
+        .evaluation-form-container .card { border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .evaluation-form-container .header-info { background-color: #f3f4f6; border-radius: 1rem 1rem 0 0; padding: 1.5rem; }
+        .evaluation-form-container .form-section { border-bottom: 1px solid #e5e7eb; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .evaluation-form-container .form-section:last-child { border-bottom: none; }
+        .evaluation-form-container .gemini-btn-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        @media (min-width: 640px) { .evaluation-form-container .gemini-btn-group { flex-direction: row; } }
+        .evaluation-form-container .highlight-field {
+            border: 2px solid #ef4444 !important; /* Red border */
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5); /* Red glow */
+            border-radius: 1rem;
+        }
+        .evaluation-form-container .results-modal-content { max-width: 500px; }
+
+        /* OTP Input Styles */
+        .otp-container { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .otp-input { 
+            width: 50px; height: 50px; 
+            text-align: center; font-size: 1.5rem; font-weight: bold;
+            border: 2px solid #d1d5db; border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .otp-input:focus { 
+            border-color: #f59e0b; outline: none; 
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        .otp-input.filled { border-color: #10b981; background-color: #f0fdf4; }
+        
+        /* Countdown Timer */
+        .countdown { 
+            font-size: 0.875rem; 
+            color: #ef4444; font-weight: 600;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 min-h-screen p-4">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-stone-900">WorkHub Role-Based Dashboard Prototype</h1>
+            <p class="text-md text-stone-600 mt-1">Simulated User Journeys for Tech & Talent Solutions Ltd.</p>
+        </header>
+
+        <!-- Role Selector/Flow Buttons -->
+        <div class="flex flex-wrap justify-center gap-2 p-3 bg-white rounded-xl shadow-md mb-6">
+            <button data-screen="signup" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">Sign Up / In</button>
+            <button data-screen="visitor" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">1. Visitor (Evaluation)</button>
+            <button data-screen="candidate" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">2. Candidate (Application)</button>
+            <button data-screen="new_employee" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">3. New Employee (Training)</button>
+            <button data-screen="employee" class="role-selector-btn py-2 px-4 rounded-lg text-sm transition-all bg-stone-200 hover:bg-stone-300">4. Employee (Full Access)</button>
+        </div>
+
+        <!-- Main Content Container -->
+        <div id="screen-container" class="bg-white p-6 md:p-10 rounded-xl shadow-lg">
+            <!-- Content will be injected here -->
+        </div>
+    </div>
+    
+    <!-- Modal for Legal Documents -->
+    <div id="legal-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modal-content-body"></div>
+            <div class="mt-6 text-right">
+                <button onclick="closeModal('legal-modal')" class="bg-stone-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-stone-600 transition">
+                    Close & Accept
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Evaluation Form Results -->
+    <div id="resultsModal" class="modal-overlay">
+        <div class="modal-content results-modal-content text-center">
+            <h2 id="modalTitle" class="text-3xl font-bold mb-4"></h2>
+            <div id="modalStatusIcon" class="mx-auto my-4 w-16 h-16 flex items-center justify-center rounded-full"></div>
+            <p id="modalMessage" class="text-lg text-gray-700 mb-6"></p>
+            <div id="rejectionReasons" class="text-left bg-red-50 p-4 rounded-lg border border-red-200 hidden">
+                <p class="font-semibold text-red-700 mb-2">Details:</p>
+                <ul id="reasonsList" class="list-disc ml-5 text-sm text-red-600 space-y-1"></ul>
+            </div>
+            <button onclick="closeModal('resultsModal')" class="mt-6 bg-gray-500 text-white py-2 px-6 rounded-full font-medium hover:bg-gray-600 transition duration-300">
+                Close and Review
+            </button>
+            <p id="firestoreStatus" class="mt-4 text-xs text-gray-500"></p>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div id="otp-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold text-amber-700 mb-2 text-center">Verify Your Identity</h2>
+            <p class="text-sm text-stone-600 text-center mb-6">Enter the verification codes sent to your email and mobile</p>
+            
+            <!-- Email OTP Section -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="font-semibold text-blue-800 mb-2">📧 Email Verification</h3>
+                <p class="text-sm text-blue-600 mb-3">OTP sent to: <span id="verify-email" class="font-mono">user@gmail.com</span></p>
+                <div class="otp-container" id="email-otp-container">
+                    <input type="text" maxlength="1" class="otp-input" data-index="0">
+                    <input type="text" maxlength="1" class="otp-input" data-index="1">
+                    <input type="text" maxlength="1" class="otp-input" data-index="2">
+                    <input type="text" maxlength="1" class="otp-input" data-index="3">
+                    <input type="text" maxlength="1" class="otp-input" data-index="4">
+                    <input type="text" maxlength="1" class="otp-input" data-index="5">
+                </div>
+                <div class="countdown" id="email-countdown">02:00</div>
+                <button class="text-sm text-blue-600 hover:text-blue-800" id="resend-email-otp">Resend Email OTP</button>
+            </div>
+
+            <!-- Mobile OTP Section -->
+            <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 class="font-semibold text-green-800 mb-2">📱 Mobile Verification</h3>
+                <p class="text-sm text-green-600 mb-3">OTP sent to: <span id="verify-mobile" class="font-mono">+92 XXX XXXXXXX</span></p>
+                <div class="otp-container" id="mobile-otp-container">
+                    <input type="text" maxlength="1" class="otp-input" data-index="0">
+                    <input type="text" maxlength="1" class="otp-input" data-index="1">
+                    <input type="text" maxlength="1" class="otp-input" data-index="2">
+                    <input type="text" maxlength="1" class="otp-input" data-index="3">
+                    <input type="text" maxlength="1" class="otp-input" data-index="4">
+                    <input type="text" maxlength="1" class="otp-input" data-index="5">
+                </div>
+                <div class="countdown" id="mobile-countdown">02:00</div>
+                <button class="text-sm text-green-600 hover:text-green-800" id="resend-mobile-otp">Resend SMS OTP</button>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal('otp-modal')" class="flex-1 bg-stone-500 text-white py-3 rounded-lg font-semibold hover:bg-stone-600 transition">
+                    Cancel
+                </button>
+                <button id="verify-otp-btn" class="flex-1 bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700 transition opacity-50 cursor-not-allowed" disabled>
+                    Verify & Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL APP STATE AND CONFIG ---
+        const screenContainer = document.getElementById('screen-container');
+        const roleButtons = document.querySelectorAll('.role-selector-btn');
+        
+        const COMPANY_NAME = "Tech Solutions Ltd.";
+        const CONTACT_EMAIL = "contact@workhub.pk";
+        const EFFECTIVE_DATE = "2025-10-07";
+        const WEBSITE_URL = "https://www.workhub.pk";
+
+        let db, auth, userId = null;
+        let otpTimers = { email: null, mobile: null };
+        let currentOTPData = { email: null, mobile: null };
+
+        // Enhanced Sign Up Form HTML with all required fields
+        const signUpFormHtml = `
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold text-amber-700 mb-6 text-center">Create Your WorkHub Account</h2>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h3 class="font-semibold text-blue-800 mb-2">📋 Registration Requirements</h3>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>• Only <strong>@gmail.com</strong> emails accepted</li>
+                        <li>• Mobile number verification required</li>
+                        <li>• Email OTP verification required</li>
+                        <li>• Complete all personal information fields</li>
+                    </ul>
+                </div>
+
+                <form id="signup-form" class="space-y-4">
+                    <!-- Personal Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="full_name" class="block text-sm font-medium text-stone-700 mb-1">Full Name *</label>
+                            <input type="text" id="full_name" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Enter your full name">
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-stone-700 mb-1">Email Address *</label>
+                            <input type="email" id="email" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="user@gmail.com">
+                            <p class="text-xs text-stone-500 mt-1">Only @gmail.com addresses accepted</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-stone-700 mb-1">Password *</label>
+                            <input type="password" id="password" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Minimum 8 characters">
+                        </div>
+                        <div>
+                            <label for="confirm_password" class="block text-sm font-medium text-stone-700 mb-1">Confirm Password *</label>
+                            <input type="password" id="confirm_password" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Re-enter your password">
+                        </div>
+                    </div>
+
+                    <!-- Mobile Number with Pakistan Code Only -->
+                    <div>
+                        <label for="mobile_number" class="block text-sm font-medium text-stone-700 mb-1">Mobile Number *</label>
+                        <div class="flex gap-2">
+                            <select id="country_code" class="w-24 px-3 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 bg-stone-100">
+                                <option value="+92" selected>+92 (PK)</option>
+                            </select>
+                            <input type="tel" id="mobile_number" required class="flex-1 px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="300 1234567">
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1">We'll send an SMS verification code</p>
+                    </div>
+
+                    <!-- Location Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="city" class="block text-sm font-medium text-stone-700 mb-1">City *</label>
+                            <input type="text" id="city" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Your city">
+                        </div>
+                        <div>
+                            <label for="province" class="block text-sm font-medium text-stone-700 mb-1">Province *</label>
+                            <select id="province" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
+                                <option value="">Select Province</option>
+                                <option value="Punjab">Punjab</option>
+                                <option value="Sindh">Sindh</option>
+                                <option value="KPK">Khyber Pakhtunkhwa</option>
+                                <option value="Balochistan">Balochistan</option>
+                                <option value="Gilgit-Baltistan">Gilgit-Baltistan</option>
+                                <option value="Azad Kashmir">Azad Kashmir</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="country" class="block text-sm font-medium text-stone-700 mb-1">Country *</label>
+                            <input type="text" id="country" required value="Pakistan" readonly class="w-full px-4 py-2 border border-stone-300 rounded-lg bg-stone-100">
+                        </div>
+                    </div>
+
+                    <!-- Terms Agreement -->
+                    <div class="flex items-start space-x-2 pt-2">
+                        <input type="checkbox" id="terms-agree" required class="mt-1 h-4 w-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500">
+                        <label for="terms-agree" class="text-sm text-stone-700">
+                            I agree to the <a href="#" class="text-amber-600 hover:underline font-semibold" onclick="event.preventDefault(); openModal('legal-modal', 'Terms & Conditions', 'full-terms');">Terms & Conditions</a> 
+                            and <a href="#" class="text-amber-600 hover:underline font-semibold" onclick="event.preventDefault(); openModal('legal-modal', 'Privacy Policy', 'full-privacy');">Privacy Policy</a>. 
+                            I understand that my activity will be monitored for security and quality purposes.
+                        </label>
+                    </div>
+
+                    <button type="submit" id="signup-submit-btn" class="w-full bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700 transition">
+                        Create Account & Verify
+                    </button>
+
+                    <p class="text-center text-sm text-stone-600 mt-4">
+                        Already have an account? 
+                        <a href="#" id="switch-to-signin" class="text-amber-600 hover:underline font-semibold">Sign In</a>
+                    </p>
+                </form>
+            </div>
+        `;
+
+        // Enhanced Sign In Form HTML
+        const signInFormHtml = `
+            <div class="max-w-md mx-auto">
+                <h2 class="text-2xl font-bold text-amber-700 mb-6 text-center">Welcome Back to WorkHub</h2>
+                
+                <form id="signin-form" class="space-y-4">
+                    <div>
+                        <label for="signin-email" class="block text-sm font-medium text-stone-700 mb-1">Email Address</label>
+                        <input type="email" id="signin-email" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="user@gmail.com">
+                    </div>
+
+                    <div>
+                        <label for="signin-password" class="block text-sm font-medium text-stone-700 mb-1">Password</label>
+                        <input type="password" id="signin-password" required class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-amber-500 focus:border-amber-500" placeholder="Enter your password">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="remember-me" class="h-4 w-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500">
+                            <label for="remember-me" class="ml-2 text-sm text-stone-700">Remember me</label>
+                        </div>
+                        <a href="#" class="text-sm text-amber-600 hover:underline">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" id="signin-submit-btn" class="w-full bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700 transition">
+                        Sign In
+                    </button>
+
+                    <p class="text-center text-sm text-stone-600 mt-4">
+                        Don't have an account? 
+                        <a href="#" id="switch-to-signup" class="text-amber-600 hover:underline font-semibold">Create Account</a>
+                    </p>
+                </form>
+            </div>
+        `;
+
+        // --- SCREEN TEMPLATES ---
+        const screens = {
+            signup: `
+                <div id="auth-container">
+                    <div class="flex justify-center mb-6 space-x-4 border-b">
+                        <button data-tab="signin" class="auth-tab py-2 px-4 text-lg font-semibold border-b-2 border-transparent text-stone-400 hover:text-stone-600">Sign In</button>
+                        <button data-tab="signup" class="auth-tab py-2 px-4 text-lg font-semibold border-b-2 border-amber-600 text-amber-600">Sign Up</button>
+                    </div>
+                    <div id="auth-form-container"></div>
+                </div>
+            `,
+            visitor: `
+                <div class="max-w-4xl mx-auto dashboard-content">
+                    <h2 class="text-3xl font-bold text-stone-800 mb-4">👤 Visitor Dashboard</h2>
+                    <p class="text-amber-600 font-semibold mb-6">Status: Registered - Action Required</p>
+                    <div class="bg-amber-50 border-l-4 border-amber-600 p-4 rounded-lg shadow-sm mb-6">
+                        <h3 class="font-bold text-lg text-amber-800 mb-1">Mandatory: Pre-Requirements Evaluation</h3>
+                        <p class="text-sm text-amber-700">You must review and agree to the legal documents to be eligible for the next step.</p>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-stone-100 p-6 rounded-xl shadow-inner">
+                            <h4 class="text-xl font-semibold text-stone-700 mb-4">Legal Documents Review</h4>
+                            <div class="flex justify-start mb-4 space-x-4 border-b border-stone-300">
+                                <button data-tab="terms" class="legal-tab text-sm font-semibold border-b-2 border-transparent text-stone-400 hover:text-stone-600 pb-1">Terms & Conditions</button>
+                                <button data-tab="privacy" class="legal-tab text-sm font-semibold border-b-2 border-transparent text-stone-400 hover:text-stone-600 pb-1">Privacy Policy</button>
+                            </div>
+                            <div id="legal-content" class="h-64 overflow-y-auto bg-white p-3 rounded-lg text-sm text-stone-700 border border-stone-200"></div>
+                            <div class="mt-4 flex items-center">
+                                <input type="checkbox" id="legal-agree" class="h-4 w-4 text-amber-600 border-stone-300 rounded focus:ring-amber-500">
+                                <label for="legal-agree" class="ml-2 block text-sm text-stone-700">I have read and agree to all policies above.</label>
+                            </div>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-xl shadow-inner flex flex-col justify-center">
+                            <h4 class="text-xl font-semibold text-stone-700 mb-4">Evaluate & Eligibility</h4>
+                            <p class="text-sm text-stone-600 mb-4">Once you agree to the policies, you can begin the evaluation process.</p>
+                            <button id="submit-evaluation" class="w-full bg-amber-600 text-white py-2 rounded-lg font-semibold hover:bg-amber-700 transition opacity-50 cursor-not-allowed" disabled>Evaluate Now</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            // ... other screen templates remain the same
+        };
+
+        // --- LEGAL CONTENT & MODALS ---
+        const termsContent = `<h5 class="font-bold text-stone-800 mb-2">Terms & Conditions Summary</h5><p><strong>1. Account:</strong> Use of platform is conditional on account approval. **Minimum age 16.** Under 18 requires parental consent.</p><p><strong>2. Conduct:</strong> Professional behavior is required. Use of unauthorized software is prohibited.</p><p><strong>3. Payments:</strong> Hourly rates are subject to change. Payments processed weekly.</p><p><strong>4. Termination:</strong> Account can be terminated immediately for contract breach or security violation.</p><p class="pt-2 text-xs text-stone-500">View full T&C document for complete details at ${WEBSITE_URL}.</p>`;
+        const privacyContent = `<h5 class="font-bold text-stone-800 mb-2">Privacy Policy Summary</h5><p><strong>1. Data Collected:</strong> Name, Email, Contact Info, Payment Details, and Work Activity Data (including screenshots/keystrokes during work).</p><p><strong>2. Age Requirement:</strong> The Service is intended for users **aged 16 and above**. Users under 18 must have parental/guardian consent.</p><p><strong>3. Use of Data:</strong> Used strictly for payment processing, performance evaluation, and security compliance.</p><p><strong>4. Sharing:</strong> Data is not sold. Shared only with necessary third parties (e.g., payment processors).</p><p><strong>5. Security:</strong> Data is stored securely with restricted access.</p><p class="pt-2 text-xs text-stone-500">View full Privacy Policy document for complete details at ${WEBSITE_URL}.</p>`;
+        const fullLegalContent = { 
+            'full-terms': `<h2>Terms & Conditions</h2><p class="text-sm text-stone-500 mb-4">Effective Date: ${EFFECTIVE_DATE}</p>
+                <h3>1. Acceptance of Terms</h3>
+                <p>By accessing and using the WorkHub Platform ("Platform"), you accept and agree to be bound by the terms and provision of this agreement.</p>
+                
+                <h3>2. Use License</h3>
+                <p>Permission is granted to temporarily use the Platform for remote data entry work. This is the grant of a license, not a transfer of title.</p>
+                
+                <h3>3. Account Registration</h3>
+                <p>You must provide accurate information during registration. Only @gmail.com emails are accepted. Mobile number verification is mandatory.</p>
+                
+                <h3>4. User Conduct</h3>
+                <p>Users must maintain professional conduct. Any form of harassment, data theft, or platform misuse will result in immediate termination.</p>
+                
+                <h3>5. Payment Terms</h3>
+                <p>Payments are processed weekly. Hourly rates may be revised with 7-day notice. Rs. 1000 security fund deducted from first salary.</p>
+                
+                <h3>6. Termination</h3>
+                <p>We may terminate or suspend access to our Platform immediately, without prior notice, for conduct violating these Terms.</p>
+                
+                <h3>7. Governing Law</h3>
+                <p>These Terms shall be governed by the laws of Pakistan without regard to its conflict of law provisions.</p>`, 
+                
+            'full-privacy': `<h2>Privacy Policy</h2><p class="text-sm text-stone-500 mb-4">Effective Date: ${EFFECTIVE_DATE}</p>
+                <h3>1. Information We Collect</h3>
+                <p><strong>Personal Information:</strong> Name, email, mobile number, location data, and government identification documents.</p>
+                <p><strong>Work Performance Data:</strong> Screen recordings, keystroke logs, activity monitoring data, and productivity metrics.</p>
+                <p><strong>Technical Data:</strong> Device information, IP addresses, browser type, and operating system.</p>
+                
+                <h3>2. How We Use Your Information</h3>
+                <p><strong>Service Provision:</strong> To provide and maintain our remote work platform and process payments.</p>
+                <p><strong>Quality Assurance:</strong> To monitor work quality and ensure compliance with client requirements.</p>
+                <p><strong>Security:</strong> To prevent fraud and ensure platform security through activity monitoring.</p>
+                <p><strong>Communication:</strong> To send important updates about your account and work assignments.</p>
+                
+                <h3>3. Data Sharing</h3>
+                <p>We do not sell your personal data. We may share information with:</p>
+                <ul class="list-disc ml-5">
+                    <li>Payment processors for salary disbursement</li>
+                    <li>Client organizations for work verification</li>
+                    <li>Legal authorities when required by law</li>
+                </ul>
+                
+                <h3>4. Data Security</h3>
+                <p>We implement industry-standard security measures including encryption, access controls, and regular security audits.</p>
+                
+                <h3>5. Data Retention</h3>
+                <p>We retain personal data for as long as your account is active. Work performance data is retained for 6 months for audit purposes.</p>
+                
+                <h3>6. Your Rights</h3>
+                <p>You have the right to access, correct, or delete your personal data. Contact ${CONTACT_EMAIL} for data-related requests.</p>
+                
+                <h3>7. Monitoring Consent</h3>
+                <p>By using our Platform, you consent to activity monitoring including screen recording and keystroke logging during work sessions.</p>`
+        };
+        
+        window.openModal = function(modalId, title, key) {
+            const modal = document.getElementById(modalId);
+            const body = modal.querySelector('#modal-content-body');
+            if (key && fullLegalContent[key]) {
+                body.innerHTML = fullLegalContent[key];
+            } else if (body) {
+                body.innerHTML = `<h2 class="text-xl font-bold">${title}</h2><p>Full document content would appear here.</p>`;
+            }
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+        
+        // --- FIREBASE & AUTH SETUP ---
+        async function setupFirebase() {
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            if (Object.keys(firebaseConfig).length === 0) return;
+            
+            setLogLevel('debug');
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
+            else await signInAnonymously(auth);
+
+            userId = auth.currentUser?.uid || 'anonymous-user';
+            console.log("Firebase initialized. User ID:", userId);
+        }
+
+        // --- AUTHENTICATION FUNCTIONS ---
+
+        // Generate random 6-digit OTP
+        function generateOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // Simulate OTP sending
+        function sendOTP(email, mobile, otpData) {
+            console.log('📧 Email OTP sent to:', email, 'Code:', otpData.email);
+            console.log('📱 SMS OTP sent to:', mobile, 'Code:', otpData.mobile);
+            return true;
+        }
+
+        // Start OTP countdown timer
+        function startCountdown(type, duration = 120) {
+            const countdownElement = document.getElementById(`${type}-countdown`);
+            let timeLeft = duration;
+            
+            const timer = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                countdownElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    countdownElement.textContent = "OTP expired";
+                    countdownElement.className = "text-red-600 font-semibold text-sm";
+                }
+                timeLeft--;
+            }, 1000);
+            
+            otpTimers[type] = timer;
+            return timer;
+        }
+
+        // Setup OTP input functionality
+        function setupOTPInputs() {
+            const otpContainers = document.querySelectorAll('.otp-container');
+            
+            otpContainers.forEach(container => {
+                const inputs = container.querySelectorAll('.otp-input');
+                
+                inputs.forEach((input, index) => {
+                    // Handle input
+                    input.addEventListener('input', (e) => {
+                        const value = e.target.value;
+                        
+                        if (value.length === 1 && index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                        
+                        // Check if all inputs are filled
+                        checkOTPCompletion();
+                    });
+                    
+                    // Handle backspace
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                            inputs[index - 1].focus();
+                        }
+                    });
+                });
+            });
+        }
+
+        // Check if both OTPs are completed
+        function checkOTPCompletion() {
+            const emailInputs = document.querySelectorAll('#email-otp-container .otp-input');
+            const mobileInputs = document.querySelectorAll('#mobile-otp-container .otp-input');
+            const verifyBtn = document.getElementById('verify-otp-btn');
+            
+            const emailComplete = Array.from(emailInputs).every(input => input.value.length === 1);
+            const mobileComplete = Array.from(mobileInputs).every(input => input.value.length === 1);
+            
+            if (emailComplete && mobileComplete) {
+                verifyBtn.disabled = false;
+                verifyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                verifyBtn.disabled = true;
+                verifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Verify OTPs
+        function verifyOTPs() {
+            const emailInputs = document.querySelectorAll('#email-otp-container .otp-input');
+            const mobileInputs = document.querySelectorAll('#mobile-otp-container .otp-input');
+            
+            const enteredEmailOTP = Array.from(emailInputs).map(input => input.value).join('');
+            const enteredMobileOTP = Array.from(mobileInputs).map(input => input.value).join('');
+            
+            if (enteredEmailOTP === currentOTPData.email && enteredMobileOTP === currentOTPData.mobile) {
+                return true;
+            } else {
+                alert('Invalid OTP codes. Please try again.');
+                return false;
+            }
+        }
+
+        // Open OTP verification modal
+        function openOTPModal(userData) {
+            document.getElementById('verify-email').textContent = userData.email;
+            document.getElementById('verify-mobile').textContent = `${userData.countryCode} ${userData.mobileNumber}`;
+            
+            // Clear previous OTP inputs
+            document.querySelectorAll('.otp-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+            
+            // Generate new OTPs
+            currentOTPData = {
+                email: generateOTP(),
+                mobile: generateOTP()
+            };
+            
+            // Send OTPs (simulated)
+            sendOTP(userData.email, `${userData.countryCode}${userData.mobileNumber}`, currentOTPData);
+            
+            // Start countdown timers
+            startCountdown('email');
+            startCountdown('mobile');
+            
+            // Setup OTP input functionality
+            setupOTPInputs();
+            
+            // Show modal
+            const modal = document.getElementById('otp-modal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        }
+
+        // Close OTP modal
+        function closeOTPModal() {
+            const modal = document.getElementById('otp-modal');
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+            
+            // Clear timers
+            Object.values(otpTimers).forEach(timer => {
+                if (timer) clearInterval(timer);
+            });
+        }
+
+        // --- SCREEN RENDERING & SETUP ---
+        function renderScreen(screenName) {
+            roleButtons.forEach(btn => btn.classList.remove('active'));
+            const activeButton = document.querySelector(`[data-screen="${screenName}"]`);
+            if (activeButton) activeButton.classList.add('active');
+            
+            screenContainer.innerHTML = screens[screenName];
+
+            if (screenName === 'signup') setupSignUpScreen();
+            else if (screenName === 'visitor') setupVisitorScreen();
+            // ... other screen setups
+        }
+
+        function setupSignUpScreen() {
+            const authFormContainer = document.getElementById('auth-form-container');
+            const authTabs = document.querySelectorAll('.auth-tab');
+            
+            function showAuthTab(tabName) {
+                authTabs.forEach(tab => {
+                    tab.classList.remove('border-amber-600', 'text-amber-600');
+                    tab.classList.add('border-transparent', 'text-stone-400');
+                });
+                
+                const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+                if (activeTab) {
+                    activeTab.classList.add('border-amber-600', 'text-amber-600');
+                    activeTab.classList.remove('border-transparent', 'text-stone-400');
+                }
+                
+                if (tabName === 'signup') {
+                    authFormContainer.innerHTML = signUpFormHtml;
+                    setupSignUpForm();
+                } else {
+                    authFormContainer.innerHTML = signInFormHtml;
+                    setupSignInForm();
+                }
+            }
+            
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    showAuthTab(e.target.dataset.tab);
+                });
+            });
+            
+            showAuthTab('signup');
+        }
+
+        function setupSignUpForm() {
+            const form = document.getElementById('signup-form');
+            const switchToSignIn = document.getElementById('switch-to-signin');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = {
+                    fullName: document.getElementById('full_name').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    password: document.getElementById('password').value,
+                    confirmPassword: document.getElementById('confirm_password').value,
+                    mobileNumber: document.getElementById('mobile_number').value.trim(),
+                    countryCode: document.getElementById('country_code').value,
+                    city: document.getElementById('city').value.trim(),
+                    province: document.getElementById('province').value,
+                    country: document.getElementById('country').value
+                };
+                
+                // Validation
+                if (!formData.email.endsWith('@gmail.com')) {
+                    alert('Only @gmail.com email addresses are accepted.');
+                    return;
+                }
+                
+                if (formData.password !== formData.confirmPassword) {
+                    alert('Passwords do not match.');
+                    return;
+                }
+                
+                if (formData.password.length < 8) {
+                    alert('Password must be at least 8 characters long.');
+                    return;
+                }
+                
+                // Show OTP verification modal
+                openOTPModal(formData);
+            });
+            
+            switchToSignIn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelector('[data-tab="signin"]').click();
+            });
+        }
+
+        function setupSignInForm() {
+            const form = document.getElementById('signin-form');
+            const switchToSignUp = document.getElementById('switch-to-signup');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const email = document.getElementById('signin-email').value.trim();
+                const password = document.getElementById('signin-password').value;
+                
+                try {
+                    // Simulate successful sign in
+                    console.log('Sign in attempt:', email);
+                    
+                    // In production, this would be actual Firebase auth
+                    // const user = await signInWithEmailAndPassword(auth, email, password);
+                    
+                    // Redirect to Visitor dashboard
+                    alert('Successfully signed in!');
+                    renderScreen('visitor');
+                } catch (error) {
+                    alert('Error signing in: ' + error.message);
+                }
+            });
+            
+            switchToSignUp.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelector('[data-tab="signup"]').click();
+            });
+        }
+
+        function setupVisitorScreen() {
+            document.getElementById('legal-content').innerHTML = termsContent;
+            document.querySelectorAll('.legal-tab').forEach(tab => tab.addEventListener('click', (e) => {
+                document.getElementById('legal-content').innerHTML = e.target.dataset.tab === 'terms' ? termsContent : privacyContent;
+            }));
+            const agreeCheckbox = document.getElementById('legal-agree');
+            const submitButton = document.getElementById('submit-evaluation');
+            agreeCheckbox.addEventListener('change', () => {
+                submitButton.disabled = !agreeCheckbox.checked;
+                submitButton.classList.toggle('opacity-50', !agreeCheckbox.checked);
+                submitButton.classList.toggle('cursor-not-allowed', !agreeCheckbox.checked);
+            });
+            submitButton.addEventListener('click', () => {
+                if (agreeCheckbox.checked) renderScreen('evaluation');
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFirebase();
+            renderScreen('signup'); 
+            roleButtons.forEach(button => {
+                button.addEventListener('click', (e) => renderScreen(e.currentTarget.dataset.screen));
+            });
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+            });
+
+            // OTP Modal Event Listeners
+            document.getElementById('verify-otp-btn').addEventListener('click', async () => {
+                if (verifyOTPs()) {
+                    alert('OTP verification successful! Account created.');
+                    closeOTPModal();
+                    renderScreen('visitor');
+                }
+            });
+
+            document.getElementById('resend-email-otp').addEventListener('click', () => {
+                alert('Email OTP resent!');
+            });
+
+            document.getElementById('resend-mobile-otp').addEventListener('click', () => {
+                alert('SMS OTP resent!');
+            });
+        });
+    </script>
+</body>
+</html>
